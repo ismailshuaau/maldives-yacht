@@ -548,6 +548,8 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('X-Frame-Options','DENY')
         self.send_header('Permissions-Policy','camera=(), microphone=(), geolocation=()')
         self.send_header('Content-Security-Policy',"default-src 'self' https: data:; img-src 'self' https: data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.merchants.bankofmaldives.com.mv https://api.uat.merchants.bankofmaldives.com.mv")
+        if not self.path.startswith('/api/'):
+            self.send_header('Cache-Control','no-cache')
         super().end_headers()
     def rate_ok(self, limit=120, seconds=60):
         key=self.client_address[0];now=datetime.now(timezone.utc).timestamp();arr=[t for t in RATE_BUCKET.get(key,[]) if now-t<seconds]
