@@ -1,0 +1,17 @@
+name = "atolle"
+main = "src/worker.js"
+compatibility_date = "2026-09-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "atolle-production"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "atolle-media"
+
+[vars]
+BML_ENV = "sandbox"
+BML_CURRENCY = "USD"
+# Store BML_API_KEY and session signing secrets with `wrangler secret put`, not here.
