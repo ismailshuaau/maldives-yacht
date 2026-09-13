@@ -144,8 +144,11 @@ CREATE TABLE IF NOT EXISTS departures(
  nights INTEGER,
  cabins_total INTEGER,
  cabins_available INTEGER,
+ places_total INTEGER,
+ places_available INTEGER,
  price_pp REAL,
  status TEXT DEFAULT 'open',
+ mock_generated INTEGER NOT NULL DEFAULT 0,
  FOREIGN KEY(yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS bookings(
@@ -158,6 +161,7 @@ CREATE TABLE IF NOT EXISTS bookings(
  email TEXT NOT NULL,
  phone TEXT,
  guests INTEGER NOT NULL,
+ cabins_booked INTEGER NOT NULL DEFAULT 0,
  start_date TEXT,
  end_date TEXT,
  nights INTEGER,
@@ -184,6 +188,7 @@ CREATE TABLE IF NOT EXISTS availability_holds(
  start_date TEXT,
  end_date TEXT,
  units INTEGER NOT NULL DEFAULT 1,
+ cabin_units INTEGER NOT NULL DEFAULT 0,
  expires_at TEXT NOT NULL,
  status TEXT NOT NULL DEFAULT 'active',
  created_at TEXT NOT NULL,
@@ -313,6 +318,106 @@ def add_col(c, table, name, ddl):
         c.execute(f'ALTER TABLE {table} ADD COLUMN {name} {ddl}')
 
 
+def seed_liveaboard_snapshot(c, ts):
+    """Add the dated LiveAboard.com demo snapshot without overwriting local edits."""
+    path = ROOT / 'mock_data' / 'liveaboard-maldives-april-2028.json'
+    if not path.exists():
+        return
+    snapshot = json.loads(path.read_text(encoding='utf-8'))
+    vendor_ids = {}
+    for yacht in snapshot.get('yachts', []):
+        operator = yacht['operator']
+        source_operator_id = str(operator['source_id'])
+        if source_operator_id not in vendor_ids:
+            registration = 'LIVEABOARD-' + source_operator_id
+            row = c.execute('SELECT id FROM vendors WHERE registration_no=?', (registration,)).fetchone()
+            if row:
+                vendor_ids[source_operator_id] = row['id']
+            else:
+                cur = c.execute('''INSERT INTO vendors(name,email,legal_name,registration_no,status,verified,created_at,updated_at)
+                                   VALUES(?,?,?,?, 'verified',1,?,?)''',
+                                (operator['name'], f'liveaboard-{source_operator_id}@mock.atolle.invalid',
+                                 operator['name'], registration, ts, ts))
+                vendor_ids[source_operator_id] = cur.lastrowid
+
+        slug = 'liveaboard-' + str(yacht['source_id'])
+        row = c.execute('SELECT id FROM yachts WHERE slug=?', (slug,)).fetchone()
+        if row:
+            yacht_id = row['id']
+        else:
+            cur = c.execute('''INSERT INTO yachts(
+                                 vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,
+                                 length_m,year_built,year_refit,description,image,gallery_json,private_rate,shared_rate,
+                                 rating,reviews,verified,verification_note,amenities_json,experiences_json,updated_at)
+                               VALUES(?,?,?,?, 'live',?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                            (vendor_ids[source_operator_id], yacht['name'], slug, yacht['type'],
+                             int(bool(yacht.get('private_enabled'))), int(bool(yacht.get('shared_enabled', True))),
+                             yacht['guests'], yacht['cabins'], yacht.get('crew', 0), yacht.get('length_m', 0),
+                             yacht.get('year_built'), yacht.get('year_refit'), yacht['description'], yacht['image'],
+                             json.dumps(yacht.get('gallery', [])), None, yacht.get('shared_rate'), yacht.get('rating', 0),
+                             yacht.get('reviews', 0), 1,
+                             f"Mock snapshot from {yacht['source_url']} ({snapshot.get('retrieved_at', '')})",
+                             json.dumps(yacht.get('amenities', [])), json.dumps(yacht.get('experiences', [])), ts))
+            yacht_id = cur.lastrowid
+
+        for departure in yacht.get('departures', []):
+            exists = c.execute('''SELECT 1 FROM departures
+                                  WHERE yacht_id=? AND title=? AND start_date=? AND end_date=?''',
+                               (yacht_id, departure['title'], departure['start_date'], departure['end_date'])).fetchone()
+            if exists:
+                continue
+            c.execute('''INSERT INTO departures(
+                           yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,
+                           places_total,places_available,price_pp,status,mock_generated)
+                         VALUES(?,?,?,?,?,?,?,?,?,?,?,0)''',
+                      (yacht_id, departure['title'], departure['start_date'], departure['end_date'],
+                       departure['nights'], departure['cabins_total'], departure['cabins_available'],
+                       departure['places_total'], departure['places_available'], departure['price_pp'], departure['status']))
+
+
+MOCK_DEPARTURE_TITLE = 'Mock weekly liveaboard schedule'
+
+
+def month_start_offset(months, today=None):
+    today = today or datetime.now(timezone(timedelta(hours=5))).date()
+    month_index = today.year * 12 + today.month - 1 + months
+    return today.replace(year=month_index // 12, month=month_index % 12 + 1, day=1)
+
+
+def seed_mock_departures(c, today=None):
+    """Maintain rolling weekly demo inventory for imported liveaboards."""
+    today = today or datetime.now(timezone(timedelta(hours=5))).date()
+    window_start = month_start_offset(0, today)
+    next_window = month_start_offset(36, today)
+    first_monday = window_start + timedelta(days=(7 - window_start.weekday()) % 7)
+
+    # Generated inventory that can no longer be booked is retained for history.
+    c.execute("""UPDATE departures SET status='closed'
+                 WHERE mock_generated=1 AND status='open' AND date(end_date)<=date(?)""",
+              (today.isoformat(),))
+
+    imported = c.execute("""SELECT id,cabins,guests,shared_rate FROM yachts
+                            WHERE slug LIKE 'liveaboard-%' AND shared_enabled=1""").fetchall()
+    for yacht in imported:
+        start = first_monday
+        while start < next_window:
+            end = start + timedelta(days=7)
+            dates = (start.isoformat(), end.isoformat())
+            exists = c.execute("""SELECT 1 FROM departures
+                                  WHERE yacht_id=? AND title=? AND start_date=? AND end_date=?""",
+                               (yacht['id'], MOCK_DEPARTURE_TITLE, *dates)).fetchone()
+            if not exists:
+                status = 'closed' if end <= today else 'open'
+                c.execute('''INSERT INTO departures(
+                               yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,
+                               places_total,places_available,price_pp,status,mock_generated)
+                             VALUES(?,?,?,?,7,?,?,?,?,?,?,1)''',
+                          (yacht['id'], MOCK_DEPARTURE_TITLE, *dates,
+                           yacht['cabins'], yacht['cabins'], yacht['guests'], yacht['guests'],
+                           round(float(yacht['shared_rate'] or 0) * 7, 2), status))
+            start += timedelta(days=7)
+
+
 def init_db():
     c = db_conn()
     c.executescript(SCHEMA)
@@ -326,11 +431,28 @@ def init_db():
         add_col(c, 'yachts', name, ddl)
     for name, ddl in [
         ('booking_ref','TEXT'), ('phone','TEXT'), ('nights','INTEGER'),
+        ('cabins_booked','INTEGER NOT NULL DEFAULT 0'),
         ('total_amount','REAL NOT NULL DEFAULT 0'), ('deposit_percent','REAL NOT NULL DEFAULT 100'),
         ('deposit_amount','REAL NOT NULL DEFAULT 0'), ('amount_paid','REAL NOT NULL DEFAULT 0'),
         ('balance_due','REAL NOT NULL DEFAULT 0'), ('currency',"TEXT NOT NULL DEFAULT 'USD'"),
         ('payment_status',"TEXT DEFAULT 'unpaid'"), ('expires_at','TEXT'), ('updated_at','TEXT')]:
         add_col(c, 'bookings', name, ddl)
+    departure_cols=table_cols(c, 'departures')
+    added_places_total='places_total' not in departure_cols
+    added_places_available='places_available' not in departure_cols
+    add_col(c, 'departures', 'places_total', 'INTEGER')
+    add_col(c, 'departures', 'places_available', 'INTEGER')
+    add_col(c, 'departures', 'mock_generated', 'INTEGER NOT NULL DEFAULT 0')
+    c.execute('''CREATE INDEX IF NOT EXISTS idx_departures_yacht_schedule
+                 ON departures(yacht_id,status,mock_generated,start_date)''')
+    add_col(c, 'availability_holds', 'cabin_units', 'INTEGER NOT NULL DEFAULT 0')
+    if added_places_total or added_places_available:
+        c.execute('''UPDATE departures
+                     SET places_total=COALESCE(places_total,(SELECT guests FROM yachts WHERE yachts.id=departures.yacht_id),0),
+                         places_available=COALESCE(places_available,MIN(
+                           COALESCE((SELECT guests FROM yachts WHERE yachts.id=departures.yacht_id),0),
+                           COALESCE(cabins_available,0)*2
+                         ))''')
     # Legacy bookings used amount; copy it once into total_amount where needed.
     if 'amount' in table_cols(c, 'bookings'):
         c.execute('UPDATE bookings SET total_amount=COALESCE(NULLIF(total_amount,0),amount,0)')
@@ -363,12 +485,15 @@ def init_db():
                          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
               (vendor_id,name,slug,typ,status,pe,se,guests,cabins,crew,l,year,refit,desc,img,pr,sr,rating,reviews,ver,json.dumps(amen),json.dumps(exp),ts))
             ids.append(cur.lastrowid)
-        c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,price_pp)
-                     VALUES(?,?,?,?,?,?,?,?)''',(ids[1],'Maldives Explorer','2026-11-14','2026-11-21',7,11,6,2395))
-        c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,price_pp)
-                     VALUES(?,?,?,?,?,?,?,?)''',(ids[1],'Dive & Wellness Week','2026-11-22','2026-11-29',7,11,4,2595))
+        c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp)
+                     VALUES(?,?,?,?,?,?,?,?,?,?)''',(ids[1],'Maldives Explorer','2026-11-14','2026-11-21',7,11,6,22,12,2395))
+        c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp)
+                     VALUES(?,?,?,?,?,?,?,?,?,?)''',(ids[1],'Dive & Wellness Week','2026-11-22','2026-11-29',7,11,4,22,8,2595))
     else:
         vendor_id = c.execute('SELECT id FROM vendors ORDER BY id LIMIT 1').fetchone()[0]
+
+    seed_liveaboard_snapshot(c, ts)
+    seed_mock_departures(c)
 
     # Seed demo users if missing. Passwords are intentionally documented demo credentials.
     demo_users=[
@@ -407,7 +532,7 @@ def rowdict(row):
             if k.endswith('_json'):d[k[:-5]]=parsed
             else:d[k]=parsed
             if k.endswith('_json'):d.pop(k,None)
-    for k in ('private_enabled','shared_enabled','verified','active'):
+    for k in ('private_enabled','shared_enabled','mock_generated','verified','active'):
         if k in d:d[k]=bool(d[k])
     return d
 
@@ -435,6 +560,43 @@ def overlap_exists(c,yacht_id,start_date,end_date,exclude_booking=None):
     if exclude_booking:
         sql+=' AND h.booking_id<>?';vals.append(exclude_booking)
     return bool(c.execute(sql,vals).fetchone())
+
+
+def model_flags(data, existing=None):
+    private_enabled=bool(data.get('private_enabled', existing.get('private_enabled') if existing else False))
+    shared_enabled=bool(data.get('shared_enabled', existing.get('shared_enabled') if existing else False))
+    if not private_enabled and not shared_enabled:
+        raise ValueError('At least one booking model must be enabled')
+    return int(private_enabled),int(shared_enabled)
+
+
+def departure_values(data):
+    try:
+        start=parse_date(data.get('start_date'));end=parse_date(data.get('end_date'))
+        if not start or not end or end<=start:raise ValueError('End date must follow start date')
+        values={k:int(data.get(k) or 0) for k in ('nights','cabins_total','cabins_available','places_total','places_available')}
+        values['price_pp']=float(data.get('price_pp') or 0)
+    except (TypeError, ValueError) as e:
+        message=str(e) if str(e) else 'Departure dates and inventory must be valid numbers'
+        raise ValueError(message)
+    if any(v<0 for v in values.values()):raise ValueError('Duration, inventory, and price must be non-negative')
+    if values['cabins_available']>values['cabins_total']:raise ValueError('Available cabins cannot exceed total cabins')
+    if values['places_available']>values['places_total']:raise ValueError('Available places cannot exceed total places')
+    status=data.get('status','open')
+    if status not in ('open','closed'):raise ValueError('Departure status must be open or closed')
+    return {**values,'title':data.get('title'),'start_date':data.get('start_date'),'end_date':data.get('end_date'),'status':status}
+
+
+def departure_dict(c, row, include_effective=True):
+    dep=rowdict(row)
+    if not dep or not include_effective:return dep
+    clean_expired_holds(c)
+    reserved=c.execute("""SELECT COALESCE(SUM(units),0) places,COALESCE(SUM(cabin_units),0) cabins
+                          FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?""",
+                       (dep['id'],now_iso())).fetchone()
+    dep['places_remaining']=max(0,int(dep.get('places_available') or 0)-int(reserved['places'] or 0))
+    dep['cabins_remaining']=max(0,int(dep.get('cabins_available') or 0)-int(reserved['cabins'] or 0))
+    return dep
 
 
 def bml_config():
@@ -585,11 +747,56 @@ class Handler(SimpleHTTPRequestHandler):
                 if q.get('q'):
                     where.append('(name LIKE ? OR type LIKE ? OR description LIKE ?)');s='%'+q['q'][0]+'%';vals += [s,s,s]
                 sql='SELECT * FROM yachts'+((' WHERE '+' AND '.join(where)) if where else '')+' ORDER BY verified DESC,rating DESC,id DESC'
-                self.send_json([rowdict(r) for r in c.execute(sql,vals).fetchall()]);return
+                yachts=[rowdict(r) for r in c.execute(sql,vals).fetchall()]
+                mode=(q.get('mode') or [''])[0].lower()
+                if not mode:
+                    self.send_json(yachts);return
+                if mode not in ('private','shared'):
+                    self.send_json({'error':'mode must be private or shared'},400);return
+                start=(q.get('start') or [None])[0];end=(q.get('end') or [None])[0]
+                if bool(start)!=bool(end):
+                    self.send_json({'error':'start and end must be provided together'},400);return
+                if start and end:
+                    try:
+                        sd,ed=parse_date(start),parse_date(end)
+                        if not sd or not ed or ed<=sd:raise ValueError()
+                    except:
+                        self.send_json({'error':'Valid start and end dates are required'},400);return
+                try:guests=max(1,int((q.get('guests') or ['1'])[0]))
+                except:guests=1
+                yacht_type=(q.get('type') or [''])[0].strip().lower()
+                experience=(q.get('experience') or [''])[0].strip().lower()
+                try:duration_min=max(0,int((q.get('duration_min') or ['0'])[0]))
+                except:duration_min=0
+                try:duration_max=max(0,int((q.get('duration_max') or ['0'])[0]))
+                except:duration_max=0
+                results=[];ts=now_iso()
+                for yacht in yachts:
+                    if yacht_type and str(yacht.get('type') or '').lower()!=yacht_type:continue
+                    if experience and experience not in [str(x).lower() for x in yacht.get('experiences',[])]:continue
+                    if mode=='private':
+                        if not yacht.get('private_enabled') or guests>int(yacht.get('guests') or 0):continue
+                        if start and overlap_exists(c,yacht['id'],start,end):continue
+                        results.append(yacht);continue
+                    if not yacht.get('shared_enabled'):continue
+                    matches=[]
+                    departures=c.execute("""SELECT * FROM departures WHERE yacht_id=? AND status='open'
+                                            ORDER BY mock_generated ASC,start_date,id""",(yacht['id'],)).fetchall()
+                    for row in departures:
+                        dep=departure_dict(c,row);nights=int(dep.get('nights') or 0)
+                        if start and (dep.get('start_date')>end or dep.get('end_date')<start):continue
+                        if duration_min and nights<duration_min:continue
+                        if duration_max and nights>duration_max:continue
+                        if dep['places_remaining']<guests or dep['cabins_remaining']<1:continue
+                        dep['available_units']=dep['places_remaining'];matches.append(dep)
+                    if matches:
+                        yacht['matching_departures']=matches;results.append(yacht)
+                self.send_json(results);return
             if u.path.startswith('/api/yachts/') and not u.path.endswith('/availability'):
                 i=u.path.split('/')[3];y=rowdict(c.execute('SELECT * FROM yachts WHERE id=?',(i,)).fetchone())
                 if not y:self.send_json({'error':'Not found'},404);return
-                y['departures']=[rowdict(r) for r in c.execute("SELECT * FROM departures WHERE yacht_id=? AND status='open' ORDER BY start_date",(i,)).fetchall()]
+                y['departures']=[departure_dict(c,r) for r in c.execute("""SELECT * FROM departures WHERE yacht_id=? AND status='open'
+                                                                           ORDER BY mock_generated ASC,start_date,id""",(i,)).fetchall()]
                 self.send_json(y);return
             if u.path.endswith('/availability') and u.path.startswith('/api/yachts/'):
                 i=u.path.split('/')[3];start=(q.get('start') or [None])[0];end=(q.get('end') or [None])[0]
@@ -598,10 +805,27 @@ class Handler(SimpleHTTPRequestHandler):
             if u.path=='/api/bookings':
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
-                sql='''SELECT b.*,y.name yacht_name,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id''';vals=[]
+                sql='''SELECT b.*,y.name yacht_name,y.vendor_id,d.title departure_title,
+                       d.start_date departure_start_date,d.end_date departure_end_date
+                       FROM bookings b JOIN yachts y ON y.id=b.yacht_id
+                       LEFT JOIN departures d ON d.id=b.departure_id''';vals=[]
                 if actor.get('role')=='vendor' and actor.get('vendor_id'):
                     sql+=' WHERE y.vendor_id=?';vals.append(actor['vendor_id'])
                 sql+=' ORDER BY b.id DESC';self.send_json([rowdict(r) for r in c.execute(sql,vals).fetchall()]);return
+            if u.path=='/api/departures':
+                actor=self.require(c,['vendor','admin']);
+                if not actor:return
+                sql='''SELECT d.*,y.name yacht_name,y.vendor_id FROM departures d JOIN yachts y ON y.id=d.yacht_id''';vals=[]
+                include_generated=(q.get('include_generated') or ['1'])[0]
+                if include_generated not in ('0','1'):
+                    self.send_json({'error':'include_generated must be 0 or 1'},400);return
+                where=[]
+                if include_generated=='0':where.append('d.mock_generated=0')
+                if actor.get('role')=='vendor' and actor.get('vendor_id'):
+                    where.append('y.vendor_id=?');vals.append(actor['vendor_id'])
+                if where:sql+=' WHERE '+' AND '.join(where)
+                sql+=' ORDER BY d.start_date DESC,d.id DESC'
+                self.send_json([departure_dict(c,r) for r in c.execute(sql,vals).fetchall()]);return
             if u.path.startswith('/api/bookings/'):
                 i=u.path.split('/')[3];b=rowdict(c.execute('''SELECT b.*,y.name yacht_name,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?''',(i,)).fetchone())
                 if not b:self.send_json({'error':'Not found'},404);return
@@ -628,6 +852,8 @@ class Handler(SimpleHTTPRequestHandler):
             if u.path=='/api/admin/stats':
                 if not self.require(c,['admin']):return
                 self.send_json({'yachts':c.execute('SELECT COUNT(*) FROM yachts').fetchone()[0],'live':c.execute("SELECT COUNT(*) FROM yachts WHERE status='live'").fetchone()[0],
+                    'private_enabled':c.execute('SELECT COUNT(*) FROM yachts WHERE private_enabled=1').fetchone()[0],
+                    'shared_enabled':c.execute('SELECT COUNT(*) FROM yachts WHERE shared_enabled=1').fetchone()[0],
                     'pending_verification':c.execute('SELECT COUNT(*) FROM yachts WHERE verified=0').fetchone()[0],'bookings':c.execute('SELECT COUNT(*) FROM bookings').fetchone()[0],
                     'enquiries':c.execute('SELECT COUNT(*) FROM enquiries').fetchone()[0],'vendors_pending':c.execute("SELECT COUNT(*) FROM vendors WHERE verified=0").fetchone()[0]});return
             if u.path=='/api/admin/vendors':
@@ -686,6 +912,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if not actor:return
                 vendor_id=actor.get('vendor_id') or data.get('vendor_id')
                 if not vendor_id:self.send_json({'error':'vendor_id required'},400);return
+                try:private_enabled,shared_enabled=model_flags(data)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                data['private_enabled']=private_enabled;data['shared_enabled']=shared_enabled
                 fields=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','shared_rate']
                 vals=[data.get(f) for f in fields];slug='-'.join(str(data.get('name','yacht')).lower().split())
                 cur=c.execute('''INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
@@ -694,8 +923,13 @@ class Handler(SimpleHTTPRequestHandler):
             if u.path=='/api/bookings':
                 yacht=rowdict(c.execute('SELECT * FROM yachts WHERE id=?',(data.get('yacht_id'),)).fetchone())
                 if not yacht:self.send_json({'error':'Yacht not found'},404);return
-                mode=data.get('mode');guests=max(1,int(data.get('guests') or 1));currency=setting(c,'currency','USD')
+                mode=data.get('mode');currency=setting(c,'currency','USD')
                 if mode not in ('private','shared'):self.send_json({'error':'mode must be private or shared'},400);return
+                try:
+                    if mode=='shared' and ('guests' not in data or 'cabins_booked' not in data):raise ValueError()
+                    guests=int(data.get('guests') or 1)
+                    if guests<1:raise ValueError()
+                except (TypeError,ValueError):self.send_json({'error':'A valid guest count is required'},400);return
                 departure_id=data.get('departure_id') or None;start=data.get('start_date');end=data.get('end_date');nights=0;total=0.0
                 if mode=='private':
                     if not yacht['private_enabled']:self.send_json({'error':'Private charter unavailable'},409);return
@@ -708,20 +942,32 @@ class Handler(SimpleHTTPRequestHandler):
                     if overlap_exists(c,yacht['id'],start,end):self.send_json({'error':'These dates are no longer available'},409);return
                     total=round(float(yacht['private_rate'] or 0)*nights,2)
                 else:
+                    if not yacht['shared_enabled']:self.send_json({'error':'Shared liveaboard unavailable'},409);return
+                    try:
+                        cabins_booked=int(data.get('cabins_booked'))
+                        if cabins_booked<1 or cabins_booked>guests:raise ValueError()
+                    except (TypeError,ValueError):self.send_json({'error':'Cabins must be between one and the number of guests'},400);return
+                    c.execute('BEGIN IMMEDIATE')
+                    clean_expired_holds(c)
                     dep=rowdict(c.execute("SELECT * FROM departures WHERE id=? AND yacht_id=? AND status='open'",(departure_id,yacht['id'])).fetchone())
-                    if not dep:self.send_json({'error':'Shared departure not found'},404);return
-                    reserved=c.execute("SELECT COALESCE(SUM(units),0) s FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?",(departure_id,ts)).fetchone()['s'] or 0
-                    if guests>max(0,int(dep['cabins_available'])-int(reserved)):self.send_json({'error':'Not enough shared places remain'},409);return
+                    if not dep:self.send_json({'error':'Shared liveaboard departure not found'},404);return
+                    reserved=c.execute("""SELECT COALESCE(SUM(units),0) places,COALESCE(SUM(cabin_units),0) cabins
+                                          FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?""",(departure_id,ts)).fetchone()
+                    places_remaining=max(0,int(dep['places_available'] or 0)-int(reserved['places'] or 0))
+                    cabins_remaining=max(0,int(dep['cabins_available'] or 0)-int(reserved['cabins'] or 0))
+                    if guests>places_remaining:self.send_json({'error':'Not enough passenger places remain'},409);return
+                    if cabins_booked>cabins_remaining:self.send_json({'error':'Not enough cabins remain'},409);return
                     start,end,nights=dep['start_date'],dep['end_date'],dep['nights'];total=round(float(dep['price_pp'] or 0)*guests,2)
+                if mode=='private':cabins_booked=0
                 deposit_percent=float(data.get('deposit_percent') or setting(c,'deposit_percent','30',True));deposit_percent=max(0,min(100,deposit_percent));deposit=round(total*deposit_percent/100,2)
                 ref='ATL-'+datetime.now(timezone.utc).strftime('%y%m%d')+'-'+secrets.token_hex(3).upper();hold_minutes=int(float(setting(c,'hold_minutes','30',True)))
                 expires=(datetime.now(timezone.utc)+timedelta(minutes=hold_minutes)).isoformat()
-                cur=c.execute('''INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?)''',
-                    (ref,yacht['id'],departure_id,mode,data.get('guest_name'),data.get('email'),data.get('phone'),guests,start,end,nights,total,deposit_percent,deposit,total,currency,data.get('notes'),expires,ts,ts))
+                cur=c.execute('''INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?)''',
+                    (ref,yacht['id'],departure_id,mode,data.get('guest_name'),data.get('email'),data.get('phone'),guests,cabins_booked,start,end,nights,total,deposit_percent,deposit,total,currency,data.get('notes'),expires,ts,ts))
                 bid=cur.lastrowid
-                c.execute('INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,\'active\',?)',
-                          (bid,yacht['id'],departure_id,start,end,guests if mode=='shared' else 1,expires,ts))
+                c.execute('INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,?,\'active\',?)',
+                          (bid,yacht['id'],departure_id,start,end,guests if mode=='shared' else 1,cabins_booked,expires,ts))
                 notify(c,f'New {mode} booking request {ref} for {yacht["name"]}.','New booking request',vendor_id=yacht['vendor_id'],booking_id=bid)
                 audit(c,self.actor(c),'create','booking',bid,{'ref':ref,'total':total});c.commit();self.send_json({'id':bid,'booking_ref':ref,'status':'pending_operator','total_amount':total,'deposit_amount':deposit,'balance_due':total,'currency':currency,'hold_expires_at':expires},201);return
             if u.path=='/api/payments/create':
@@ -775,7 +1021,15 @@ class Handler(SimpleHTTPRequestHandler):
             if u.path.endswith('/departures') and u.path.startswith('/api/yachts/'):
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
-                i=u.path.split('/')[3];cur=c.execute('INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,price_pp) VALUES(?,?,?,?,?,?,?,?)',(i,data.get('title'),data.get('start_date'),data.get('end_date'),data.get('nights'),data.get('cabins_total'),data.get('cabins_available'),data.get('price_pp')));audit(c,actor,'create','departure',cur.lastrowid,{'yacht_id':i});c.commit();self.send_json({'id':cur.lastrowid},201);return
+                i=u.path.split('/')[3];y=rowdict(c.execute('SELECT * FROM yachts WHERE id=?',(i,)).fetchone())
+                if not y:self.send_json({'error':'Yacht not found'},404);return
+                if actor.get('role')=='vendor' and y['vendor_id']!=actor.get('vendor_id'):self.send_json({'error':'Forbidden'},403);return
+                if not y['shared_enabled']:self.send_json({'error':'Yacht must have Shared Liveaboard enabled'},400);return
+                try:v=departure_values(data)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                cur=c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status)
+                                 VALUES(?,?,?,?,?,?,?,?,?,?,?)''',(i,v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status']))
+                audit(c,actor,'create','departure',cur.lastrowid,{'yacht_id':i});c.commit();self.send_json({'id':cur.lastrowid},201);return
             if u.path=='/api/vendor/documents':
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
@@ -817,12 +1071,32 @@ class Handler(SimpleHTTPRequestHandler):
                 actor=self.require(c,['admin']);
                 if not actor:return
                 i=u.path.split('/')[-1];c.execute('UPDATE yachts SET verified=?,verification_note=?,status=COALESCE(?,status),updated_at=? WHERE id=?',(1 if data.get('verified') else 0,data.get('verification_note'),data.get('status'),now_iso(),i));audit(c,actor,'yacht_verification','yacht',i,{'verified':bool(data.get('verified'))});c.commit();self.send_json({'ok':True});return
+            if u.path.startswith('/api/departures/'):
+                actor=self.require(c,['vendor','admin']);
+                if not actor:return
+                i=u.path.split('/')[-1]
+                current=rowdict(c.execute('''SELECT d.*,y.vendor_id,y.shared_enabled FROM departures d
+                                             JOIN yachts y ON y.id=d.yacht_id WHERE d.id=?''',(i,)).fetchone())
+                if not current:self.send_json({'error':'Departure not found'},404);return
+                if actor.get('role')=='vendor' and current['vendor_id']!=actor.get('vendor_id'):self.send_json({'error':'Forbidden'},403);return
+                if not current['shared_enabled']:self.send_json({'error':'Yacht must have Shared Liveaboard enabled'},400);return
+                merged={**current,**data}
+                try:v=departure_values(merged)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                c.execute('''UPDATE departures SET title=?,start_date=?,end_date=?,nights=?,cabins_total=?,cabins_available=?,
+                             places_total=?,places_available=?,price_pp=?,status=? WHERE id=?''',
+                          (v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status'],i))
+                audit(c,actor,'update','departure',i,{'fields':list(data.keys())});c.commit();self.send_json({'ok':True});return
             if u.path.startswith('/api/yachts/'):
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
                 i=u.path.split('/')[-1];y=rowdict(c.execute('SELECT * FROM yachts WHERE id=?',(i,)).fetchone())
                 if not y:self.send_json({'error':'Not found'},404);return
                 if actor.get('role')=='vendor' and actor.get('vendor_id') and y['vendor_id']!=actor['vendor_id']:self.send_json({'error':'Forbidden'},403);return
+                try:private_enabled,shared_enabled=model_flags(data,y)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                if 'private_enabled' in data:data['private_enabled']=private_enabled
+                if 'shared_enabled' in data:data['shared_enabled']=shared_enabled
                 allowed=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','shared_rate']
                 sets=[];vals=[]
                 for f in allowed:

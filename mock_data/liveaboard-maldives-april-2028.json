@@ -1,0 +1,3577 @@
+{
+  "source": "https://www.liveaboard.com/diving/search/maldives/april/2028",
+  "retrieved_at": "2026-09-13",
+  "currency": "USD",
+  "boat_count": 42,
+  "yachts": [
+    {
+      "source_id": "5875",
+      "source_url": "https://www.liveaboard.com/diving/maldives/felicity",
+      "name": "Felicity",
+      "operator": {
+        "source_id": "1403",
+        "name": "Coastal Group Pvt Ltd"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 39,
+      "year_built": 2021,
+      "year_refit": null,
+      "description": "Felicity is a Maldives dive liveaboard operated by Coastal Group Pvt Ltd. It accommodates up to 26 guests in 13 cabins aboard a 39-meter vessel. Featured facilities include Free Internet, Free Nitrox, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5875/felicity.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5875/felicity.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5875/felicity-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5875/dive-deck.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5875/arial-view-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5875/felicity-5.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5875/felicity-6.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 225,
+      "rating": 4.5,
+      "reviews": 150,
+      "amenities": [
+        "Free Internet",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "432571",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 3780,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "432572",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3780,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "432573",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3780,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "432574",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3780,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "432927",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 3780,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "6369",
+      "source_url": "https://www.liveaboard.com/diving/maldives/dune-black-manta",
+      "name": "DUNE Black Manta",
+      "operator": {
+        "source_id": "1077",
+        "name": "Dune-World"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 28,
+      "cabins": 15,
+      "crew": 0,
+      "length_m": 42,
+      "year_built": 2024,
+      "year_refit": 2024,
+      "description": "DUNE Black Manta is a Maldives dive liveaboard operated by Dune-World. It accommodates up to 28 guests in 15 cabins aboard a 42-meter vessel. Featured facilities include Free Internet, Free Nitrox, Spa, Jacuzzi / Hot Tub.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6369/1.-black-manta-liveaboard-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6369/1.-black-manta-liveaboard-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6369/2.-black-manta-liveaboard-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6369/3.-black-manta-liveaboard-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6369/4.-black-manta-liveaboard--updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6369/5.-black-manta-liveaboard-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6369/9.-jacuzzi-in-dune-black-manta-updated.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 282,
+      "rating": 4.8,
+      "reviews": 30,
+      "amenities": [
+        "Free Internet",
+        "Free Nitrox",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": [
+        {
+          "source_id": "410931",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "407004",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "407005",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "407006",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3590,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6381",
+      "source_url": "https://www.liveaboard.com/diving/maldives/spirit-of-maldives",
+      "name": "Spirit of Maldives",
+      "operator": {
+        "source_id": "1482",
+        "name": "Spirit Liveaboards"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 40,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Spirit of Maldives is a Maldives dive liveaboard operated by Spirit Liveaboards. It accommodates up to 26 guests in 13 cabins aboard a 40-meter vessel. Featured facilities include Nitrox available, Free Nitrox, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6381/Spirit%20of%20Maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6381/Spirit%20of%20Maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6381/Spirit%20Aerial%202.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6381/Spirit-Vessel-at-night-from-beach--1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6381/Spirit-of-Maldives-Vessel-Sunset-Beach--1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6381/1Spirit%20HR.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6381/3Spirit%20HR.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 265,
+      "rating": 4.7,
+      "reviews": 61,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "405363",
+          "title": "Heart of the Maldives Adventure (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-11",
+          "nights": 10,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 3850,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "401591",
+          "title": "Wonders of the Northern Atolls (Male - Male)",
+          "start_date": "2028-04-12",
+          "end_date": "2028-04-22",
+          "nights": 10,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4020,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "401592",
+          "title": "Heart of the Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 2695,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "405364",
+          "title": "Heart of the Maldives (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 2695,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "6283",
+      "source_url": "https://www.liveaboard.com/diving/maldives/ecopro-seascape",
+      "name": "EcoPro Seascape",
+      "operator": {
+        "source_id": "1170",
+        "name": "Eco Pro"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 28,
+      "cabins": 16,
+      "crew": 0,
+      "length_m": 41,
+      "year_built": 2023,
+      "year_refit": null,
+      "description": "EcoPro Seascape is a Maldives dive liveaboard operated by Eco Pro. It accommodates up to 28 guests in 16 cabins aboard a 41-meter vessel. Featured facilities include Nitrox available, Jacuzzi / Hot Tub, Naturalist Guide, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6283/Seascape-2024-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6283/Seascape-2024-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6283/arial-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6283/Seascape-2024-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6283/Seascape-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6283/sundeck-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6283/sundeck-2024-1.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 259,
+      "rating": 4.5,
+      "reviews": 33,
+      "amenities": [
+        "Nitrox available",
+        "Jacuzzi / Hot Tub",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "399066",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 16,
+          "cabins_available": 0,
+          "places_total": 28,
+          "places_available": 0,
+          "price_pp": 2835,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "399067",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 16,
+          "cabins_available": 12,
+          "places_total": 28,
+          "places_available": 24,
+          "price_pp": 2835,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "399068",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-26",
+          "nights": 10,
+          "cabins_total": 16,
+          "cabins_available": 13,
+          "places_total": 28,
+          "places_available": 26,
+          "price_pp": 4050,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "399069",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-26",
+          "end_date": "2028-05-07",
+          "nights": 11,
+          "cabins_total": 16,
+          "cabins_available": 13,
+          "places_total": 28,
+          "places_available": 26,
+          "price_pp": 4455,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5419",
+      "source_url": "https://www.liveaboard.com/diving/maldives/scubaspa-yang",
+      "name": "Scubaspa Yang",
+      "operator": {
+        "source_id": "77",
+        "name": "Scubaspa Liveaboard"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 17,
+      "crew": 0,
+      "length_m": 50,
+      "year_built": 2014,
+      "year_refit": null,
+      "description": "Scubaspa Yang is a Maldives dive liveaboard operated by Scubaspa Liveaboard. It accommodates up to 26 guests in 17 cabins aboard a 50-meter vessel. Featured facilities include Nitrox available, Spa, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5419/aerial_4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5419/aerial_4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5419/aerial_7.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5419/123.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5419/aerial_3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5419/aerial_1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5419/aerial_2.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 369,
+      "rating": 4.8,
+      "reviews": 242,
+      "amenities": [
+        "Nitrox available",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "417360",
+          "title": "Solo Travelers Cruise (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417361",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 4650,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "417362",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 4650,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "417363",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417364",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 3850,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "4394",
+      "source_url": "https://www.liveaboard.com/diving/maldives/amba",
+      "name": "Amba Liveaboard",
+      "operator": {
+        "source_id": "47",
+        "name": "Amba Malediven"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 32,
+      "year_built": 2004,
+      "year_refit": null,
+      "description": "Amba Liveaboard is a Maldives dive liveaboard operated by Amba Malediven. It accommodates up to 20 guests in 11 cabins aboard a 32-meter vessel. Featured facilities include Free Nitrox, En-Suite bathrooms, Family Cabins, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4394/malediven_aerial_2026_035.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4394/malediven_aerial_2026_035.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4394/malediven_aerial_2026_015.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4394/malediven_aerial_2026_029.jpeg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4394/_w7wnuuw7wnuuw7wn-firefly-upscaler-2x-scale.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4394/malediven_topside_2026_0825.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4394/malediven_topside_2026_0771.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 167,
+      "rating": 4.5,
+      "reviews": 91,
+      "amenities": [
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "416134",
+          "title": "Best of Central Maldives (Southtour): Ari - Vaavu - Meemu- Male Atolls (Male - Male)",
+          "start_date": "2028-04-11",
+          "end_date": "2028-04-22",
+          "nights": 11,
+          "cabins_total": 11,
+          "cabins_available": 9,
+          "places_total": 20,
+          "places_available": 18,
+          "price_pp": 3488,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "416135",
+          "title": "Best of Central Maldives (Northtour): Ari - Rasdhoo - Vaavu - Male Atolls (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-05-04",
+          "nights": 11,
+          "cabins_total": 11,
+          "cabins_available": 9,
+          "places_total": 20,
+          "places_available": 18,
+          "price_pp": 3488,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5467",
+      "source_url": "https://www.liveaboard.com/diving/maldives/adora",
+      "name": "Adora",
+      "operator": {
+        "source_id": "1085",
+        "name": "Maldives Boat Club"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 21,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 123,
+      "year_built": 2014,
+      "year_refit": null,
+      "description": "Adora is a Maldives dive liveaboard operated by Maldives Boat Club. It accommodates up to 21 guests in 11 cabins aboard a 123-meter vessel. Featured facilities include Nitrox available, Free Internet, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5467/adora-for-front-display-image.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5467/adora-for-front-display-image.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5467/adora-new.jpeg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5467/adora-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5467/adora-back.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5467/20240426--adora-316.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5467/Adora-aeriel-3.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 292,
+      "rating": 4.4,
+      "reviews": 34,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "413768",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 21,
+          "places_available": 21,
+          "price_pp": 2740.5,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413769",
+          "title": "Best of Ari (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 21,
+          "places_available": 21,
+          "price_pp": 2740.5,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413770",
+          "title": "Best of Maldives Xtra (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 21,
+          "places_available": 21,
+          "price_pp": 2740.5,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413771",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 21,
+          "places_available": 21,
+          "price_pp": 2740.5,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413772",
+          "title": "Best of Ari (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 21,
+          "places_available": 21,
+          "price_pp": 2740.5,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5476",
+      "source_url": "https://www.liveaboard.com/diving/maldives/blue-force-one",
+      "name": "Blue Force One",
+      "operator": {
+        "source_id": "1081",
+        "name": "BlueForce"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 24,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 42,
+      "year_built": 2013,
+      "year_refit": null,
+      "description": "Blue Force One is a Maldives dive liveaboard operated by BlueForce. It accommodates up to 24 guests in 12 cabins aboard a 42-meter vessel. Featured facilities include Nitrox available, Naturalist Guide, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5476/blue-force-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5476/blue-force-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5476/dji_0357.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5476/1_maldives_blue_force_one.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5476/13_maldives_blue_force_one.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5476/12_maldives_blue_force_one_dhoni_-_dinghy.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5476/dji_0767_logo.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 245,
+      "rating": 4.7,
+      "reviews": 204,
+      "amenities": [
+        "Nitrox available",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": [
+        {
+          "source_id": "390716",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 3190,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "390717",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 0,
+          "places_total": 24,
+          "places_available": 0,
+          "price_pp": 3190,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "390718",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 3090,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "390719",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 0,
+          "places_total": 24,
+          "places_available": 0,
+          "price_pp": 3090,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "390720",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2990,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6021",
+      "source_url": "https://www.liveaboard.com/diving/maldives/seafari-explorer-2",
+      "name": "Seafari Explorer 2",
+      "operator": {
+        "source_id": "1099",
+        "name": "Seafari International"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 14,
+      "crew": 0,
+      "length_m": 43,
+      "year_built": null,
+      "year_refit": 2020,
+      "description": "Seafari Explorer 2 is a Maldives dive liveaboard operated by Seafari International. It accommodates up to 20 guests in 14 cabins aboard a 43-meter vessel. Featured facilities include Nitrox available, Free Internet, Free Nitrox, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6021/230508-Seafari-Maldives-0001.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-Seafari-Maldives-0001.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-seafari-maldives-0010.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-seafari-maldives-0011.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-seafari-maldives-0004.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-seafari-maldives-0007.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6021/230508-seafari-maldives-0005.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 256,
+      "rating": 4.2,
+      "reviews": 28,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "416580",
+          "title": "Central and South Atolls (Male - Male)",
+          "start_date": "2028-04-06",
+          "end_date": "2028-04-16",
+          "nights": 10,
+          "cabins_total": 14,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 3528,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "416581",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2565,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "416582",
+          "title": "Great North Expedition (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-05-07",
+          "nights": 14,
+          "cabins_total": 14,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 5283,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5471",
+      "source_url": "https://www.liveaboard.com/diving/maldives/emperor-serenity",
+      "name": "Emperor Serenity",
+      "operator": {
+        "source_id": "58",
+        "name": "Emperor Divers"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 40,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Emperor Serenity is a Maldives dive liveaboard operated by Emperor Divers. It accommodates up to 26 guests in 13 cabins aboard a 40-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5471/Serenity-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-sunset.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-2..jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-Restaurant-&-Bar.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-Restaurant.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5471/Serenity-Bar.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 274,
+      "rating": 4.7,
+      "reviews": 202,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "392087",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3140,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392088",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3140,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392089",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3140,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392090",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 3140,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "5628",
+      "source_url": "https://www.liveaboard.com/diving/maldives/maldives-aggressor-ii",
+      "name": "Maldives Aggressor II",
+      "operator": {
+        "source_id": "42",
+        "name": "Aggressor Fleet& Dancer Fleet"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 22,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 41,
+      "year_built": 2006,
+      "year_refit": 2017,
+      "description": "Maldives Aggressor II is a Maldives dive liveaboard operated by Aggressor Fleet& Dancer Fleet. It accommodates up to 22 guests in 11 cabins aboard a 41-meter vessel. Featured facilities include Nitrox available, Jacuzzi / Hot Tub, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5628/maldivesaggressoriic.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5628/maldivesaggressoriic.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5628/maldivesaggressoriid.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5628/maldives-aggressor-iib.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5628/maldivesyacht.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5628/sundeck-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5628/outdoorlounge5.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 269,
+      "rating": 4.5,
+      "reviews": 143,
+      "amenities": [
+        "Nitrox available",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "408760",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 3985,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "408761",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 3985,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "408762",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 3985,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "408763",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 3985,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6285",
+      "source_url": "https://www.liveaboard.com/diving/maldives/ariyal",
+      "name": "Ariyal",
+      "operator": {
+        "source_id": "1403",
+        "name": "Coastal Group Pvt Ltd"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 45,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Ariyal is a Maldives dive liveaboard operated by Coastal Group Pvt Ltd. It accommodates up to 26 guests in 13 cabins aboard a 45-meter vessel. Featured facilities include Nitrox available, Free Internet, Free Nitrox, Jacuzzi / Hot Tub.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6285/Ariyal-a-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6285/Ariyal-a-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6285/Ariyal-d-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6285/Ariyal-c-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6285/Ariyal-e-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6285/Sun-Deck-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6285/dining-lounge-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 224,
+      "rating": 4.3,
+      "reviews": 133,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "413747",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3995,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413748",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3995,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413749",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3995,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413750",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3995,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "413751",
+          "title": "Explore Maldives (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3995,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "4384",
+      "source_url": "https://www.liveaboard.com/diving/maldives/leo",
+      "name": "Emperor Leo",
+      "operator": {
+        "source_id": "58",
+        "name": "Emperor Divers"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 24,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 35,
+      "year_built": 2009,
+      "year_refit": 2012,
+      "description": "Emperor Leo is a Maldives dive liveaboard operated by Emperor Divers. It accommodates up to 24 guests in 12 cabins aboard a 35-meter vessel. Featured facilities include Nitrox available, Free Nitrox, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4384/12.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4384/12.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4384/13.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4384/dji_0022.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4384/main-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4384/main.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4384/Boat%2009.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 259,
+      "rating": 4.5,
+      "reviews": 154,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "392659",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2740,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392660",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2740,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392661",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2740,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392662",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2740,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392663",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 24,
+          "places_available": 24,
+          "price_pp": 2740,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "4448",
+      "source_url": "https://www.liveaboard.com/diving/maldives/scubaspa-ying",
+      "name": "Scubaspa Yin",
+      "operator": {
+        "source_id": "77",
+        "name": "Scubaspa Liveaboard"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 17,
+      "crew": 0,
+      "length_m": 50,
+      "year_built": 2013,
+      "year_refit": null,
+      "description": "Scubaspa Yin is a Maldives dive liveaboard operated by Scubaspa Liveaboard. It accommodates up to 26 guests in 17 cabins aboard a 50-meter vessel. Featured facilities include Nitrox available, Spa, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4448/aerial_4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_7.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_5.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4448/aerial_6.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 369,
+      "rating": 4.8,
+      "reviews": 139,
+      "amenities": [
+        "Nitrox available",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "417506",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417507",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417508",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417509",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4650,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "417510",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 17,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3850,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6215",
+      "source_url": "https://www.liveaboard.com/diving/maldives/white-pearl",
+      "name": "White Pearl",
+      "operator": {
+        "source_id": "1303",
+        "name": "Pearl Fleet"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 56.4,
+      "year_built": 2020,
+      "year_refit": null,
+      "description": "White Pearl is a Maldives dive liveaboard operated by Pearl Fleet. It accommodates up to 26 guests in 13 cabins aboard a 56.4-meter vessel. Featured facilities include Free Internet, Free Nitrox, Spa, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-9.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-9.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-10.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-11.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6215/wp-aerial-12.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 398,
+      "rating": 4.6,
+      "reviews": 75,
+      "amenities": [
+        "Free Internet",
+        "Free Nitrox",
+        "Spa",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "404691",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4210,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "404692",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4210,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "404693",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3570,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "404694",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-24",
+          "end_date": "2028-05-01",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3570,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5502",
+      "source_url": "https://www.liveaboard.com/diving/maldives/carpe-novo",
+      "name": "Carpe Novo",
+      "operator": {
+        "source_id": "49",
+        "name": "Carpe Diem Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 22,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 43,
+      "year_built": 2016,
+      "year_refit": 2025,
+      "description": "Carpe Novo is a Maldives dive liveaboard operated by Carpe Diem Maldives. It accommodates up to 22 guests in 12 cabins aboard a 43-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_eyelevel.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_eyelevel.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_ocean.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_sunset.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_stern.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5502/carpenovo_sundeck_stern.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 242,
+      "rating": 4.5,
+      "reviews": 200,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "426918",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 2790,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426919",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 2790,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426920",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 2790,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426921",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 11,
+          "places_total": 22,
+          "places_available": 22,
+          "price_pp": 2790,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "4460",
+      "source_url": "https://www.liveaboard.com/diving/maldives/emperor-voyager",
+      "name": "Emperor Voyager",
+      "operator": {
+        "source_id": "58",
+        "name": "Emperor Divers"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 30,
+      "year_built": 2004,
+      "year_refit": 2014,
+      "description": "Emperor Voyager is a Maldives dive liveaboard operated by Emperor Divers. It accommodates up to 20 guests in 10 cabins aboard a 30-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4460/Emperor%20Voyager%201.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4460/Emperor%20Voyager%201.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4460/Emperor%20Voyager%202.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4460/main.jpg.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4460/16_edit.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4460/main-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4460/Emperor%20Voyager%203.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 261,
+      "rating": 4.5,
+      "reviews": 136,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "392684",
+          "title": "Sharkastic (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 0,
+          "places_total": 20,
+          "places_available": 0,
+          "price_pp": 2590,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "392685",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392686",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 0,
+          "places_total": 20,
+          "places_available": 0,
+          "price_pp": 2590,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "5670",
+      "source_url": "https://www.liveaboard.com/diving/maldives/horizon-3",
+      "name": "Horizon 3",
+      "operator": {
+        "source_id": "1068",
+        "name": "Blue Horizon"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 25,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 36,
+      "year_built": 2009,
+      "year_refit": 2026,
+      "description": "Horizon 3 is a Maldives dive liveaboard operated by Blue Horizon. It accommodates up to 25 guests in 12 cabins aboard a 36-meter vessel. Featured facilities include Nitrox available, En-Suite bathrooms, Family Cabins, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5670/horizon-3-final.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5670/horizon-3-final.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5670/dji_0218.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5670/dji_0273.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5670/dji_0232.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5670/dji_0230.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5670/dji_0187.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 221,
+      "rating": 4.3,
+      "reviews": 134,
+      "amenities": [
+        "Nitrox available",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers",
+        "Massage"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "406320",
+          "title": "Best of the Central Atolls: Male - Ari - Vaavu - Male (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 25,
+          "places_available": 24,
+          "price_pp": 2635,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "406321",
+          "title": "Best of the Central Atolls: Male - Ari - Vaavu - Male (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 25,
+          "places_available": 24,
+          "price_pp": 2635,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "406322",
+          "title": "Best of the Central Atolls: Male - Ari - Vaavu - Male (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 25,
+          "places_available": 24,
+          "price_pp": 2635,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "406323",
+          "title": "Best of the Central Atolls: Male - Ari - Vaavu - Male (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 25,
+          "places_available": 24,
+          "price_pp": 2635,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "406324",
+          "title": "Best of the Central Atolls: Male - Ari - Vaavu - Male (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 12,
+          "places_total": 25,
+          "places_available": 24,
+          "price_pp": 2635,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6411",
+      "source_url": "https://www.liveaboard.com/diving/maldives/maldives-master",
+      "name": "Maldives Master",
+      "operator": {
+        "source_id": "55",
+        "name": "Scuba Tours Worldwide"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 14,
+      "crew": 0,
+      "length_m": 42,
+      "year_built": 2024,
+      "year_refit": 2025,
+      "description": "Maldives Master is a Maldives dive liveaboard operated by Scuba Tours Worldwide. It accommodates up to 26 guests in 14 cabins aboard a 42-meter vessel. Featured facilities include Nitrox available, Jacuzzi / Hot Tub, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6411/maldives-master-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6411/maldives-master-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6411/maldives-master-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6411/maldives-master-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6411/maldives--mike-suender--large4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6411/restaurant.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6411/saloon.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 196,
+      "rating": 4.7,
+      "reviews": 2,
+      "amenities": [
+        "Nitrox available",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": [
+        {
+          "source_id": "392955",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3605,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392956",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-10",
+          "end_date": "2028-04-17",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3605,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392957",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3605,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "392958",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3605,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "4446",
+      "source_url": "https://www.liveaboard.com/diving/maldives/carpe-diem",
+      "name": "Carpe Diem",
+      "operator": {
+        "source_id": "49",
+        "name": "Carpe Diem Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 35,
+      "year_built": 2008,
+      "year_refit": 2025,
+      "description": "Carpe Diem is a Maldives dive liveaboard operated by Carpe Diem Maldives. It accommodates up to 20 guests in 10 cabins aboard a 35-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4446/carpediemcruise_eyelevel.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4446/carpediemcruise_eyelevel.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4446/carpe-diem.jpeg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4446/carpediemcruiseanddhoni.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4446/carpediemanddhoni_aerial.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4446/carpe-diem_24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4446/carpediemcruiseanddhoni_24.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 231,
+      "rating": 4.5,
+      "reviews": 167,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "426417",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-05",
+          "end_date": "2028-04-15",
+          "nights": 10,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 3465,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426418",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2475,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426419",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2475,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426420",
+          "title": "The Best of Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2070,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6218",
+      "source_url": "https://www.liveaboard.com/diving/maldives/ocean-one",
+      "name": "Ocean One",
+      "operator": {
+        "source_id": "1444",
+        "name": "Amis Des Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 15,
+      "crew": 0,
+      "length_m": 37,
+      "year_built": 2015,
+      "year_refit": 2025,
+      "description": "Ocean One is a Maldives dive liveaboard operated by Amis Des Maldives. It accommodates up to 26 guests in 15 cabins aboard a 37-meter vessel. Featured facilities include Nitrox available, Free Internet, Free Nitrox, Jacuzzi / Hot Tub.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6218/OCEAN-ONE-2025.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6218/sundeck-2025-1.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 217,
+      "rating": 4.5,
+      "reviews": 39,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": [
+        {
+          "source_id": "428038",
+          "title": "Extreme South (Gan - Gaafu)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3789,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "428039",
+          "title": "Extreme South (Gaafu - Gan)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 15,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3789,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "428040",
+          "title": "Best of South - Extrême South (Gan - Male)",
+          "start_date": "2028-04-24",
+          "end_date": "2028-05-06",
+          "nights": 12,
+          "cabins_total": 15,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4585,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6103",
+      "source_url": "https://www.liveaboard.com/diving/maldives/maldives-blue-force-3",
+      "name": "Maldives Blue Force 3",
+      "operator": {
+        "source_id": "1081",
+        "name": "BlueForce"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 42,
+      "year_built": null,
+      "year_refit": 2018,
+      "description": "Maldives Blue Force 3 is a Maldives dive liveaboard operated by BlueForce. It accommodates up to 26 guests in 12 cabins aboard a 42-meter vessel. Featured facilities include Nitrox available, En-Suite bathrooms, Family Cabins, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6103/red-sea-blue-force-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6103/red-sea-blue-force-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6103/red-sea-blue-force-3-main.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6103/red-sea-blue-force-3-night.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6103/1_maldives_blue_force_3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6103/blue-force-dive-dhoni.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6103/7_maldives_blue_force_bow_sun_deck.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 232,
+      "rating": 4.7,
+      "reviews": 38,
+      "amenities": [
+        "Nitrox available",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": [
+        {
+          "source_id": "391266",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 2490,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "415906",
+          "title": "Central Atolls, Vaavu, and Meemu Route (Male - Male)",
+          "start_date": "2028-04-05",
+          "end_date": "2028-04-15",
+          "nights": 10,
+          "cabins_total": 12,
+          "cabins_available": 9,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3690,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "391267",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 2490,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "391268",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 0,
+          "places_total": 26,
+          "places_available": 0,
+          "price_pp": 2490,
+          "status": "closed",
+          "availability_text": "FULL"
+        },
+        {
+          "source_id": "391269",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 9,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 2490,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "391270",
+          "title": "Central Atolls Classical Route (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 12,
+          "cabins_available": 9,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 2490,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "5399",
+      "source_url": "https://www.liveaboard.com/diving/maldives/dune-theia",
+      "name": "DUNE Theia",
+      "operator": {
+        "source_id": "1077",
+        "name": "Dune-World"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 32,
+      "year_built": 2006,
+      "year_refit": 2010,
+      "description": "DUNE Theia is a Maldives dive liveaboard operated by Dune-World. It accommodates up to 20 guests in 10 cabins aboard a 32-meter vessel. Featured facilities include Nitrox available, Free Internet, Free Nitrox, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5399/10.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5399/10.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5399/1.-dune-theia-liveaboard-in-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5399/9.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5399/7.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5399/5.-sundeck-in-dune-theia.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5399/7.-sundeck-in-dune-theia.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 282,
+      "rating": 4.8,
+      "reviews": 39,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "403899",
+          "title": "Central and South Atolls | A Taste of the South (Male - Male)",
+          "start_date": "2028-04-05",
+          "end_date": "2028-04-15",
+          "nights": 10,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 4090,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "405021",
+          "title": "Central Route (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 10,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 3090,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6113",
+      "source_url": "https://www.liveaboard.com/diving/maldives/ecopro-mariana",
+      "name": "EcoPro Mariana",
+      "operator": {
+        "source_id": "1170",
+        "name": "Eco Pro"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 16,
+      "cabins": 9,
+      "crew": 0,
+      "length_m": 30,
+      "year_built": 2005,
+      "year_refit": 2021,
+      "description": "EcoPro Mariana is a Maldives dive liveaboard operated by Eco Pro. It accommodates up to 16 guests in 9 cabins aboard a 30-meter vessel. Featured facilities include Nitrox available, Naturalist Guide, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6113/DJI_0188.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6113/DJI_0188.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6113/Mariana_boat.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6113/DJI_0194.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6113/Mariana.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6113/Mariana-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6113/MarianaTitle.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 232,
+      "rating": 4.3,
+      "reviews": 23,
+      "amenities": [
+        "Nitrox available",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "396418",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-02",
+          "end_date": "2028-04-09",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 8,
+          "places_total": 16,
+          "places_available": 16,
+          "price_pp": 2268,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "396419",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-09",
+          "end_date": "2028-04-16",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 8,
+          "places_total": 16,
+          "places_available": 16,
+          "price_pp": 2268,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "396420",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 8,
+          "places_total": 16,
+          "places_available": 16,
+          "price_pp": 2268,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "396421",
+          "title": "Central Atolls (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 8,
+          "places_total": 16,
+          "places_available": 16,
+          "price_pp": 2268,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6594",
+      "source_url": "https://www.liveaboard.com/diving/maldives/emperor-explorer-ii",
+      "name": "Emperor Explorer II",
+      "operator": {
+        "source_id": "58",
+        "name": "Emperor Divers"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 44,
+      "year_built": 2026,
+      "year_refit": null,
+      "description": "Emperor Explorer II is a Maldives dive liveaboard operated by Emperor Divers. It accommodates up to 26 guests in 13 cabins aboard a 44-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6594/boat-external-with-logo-and-watermark.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6594/boat-external-with-logo-and-watermark.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6594/explorer-ii-no-logo.jpeg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6594/wheelhouse.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6594/sundeck-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6594/sundeck-loungers.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6594/sundeck.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 288,
+      "rating": 0,
+      "reviews": 0,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "426220",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-05",
+          "end_date": "2028-04-15",
+          "nights": 10,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 4685,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426194",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-16",
+          "end_date": "2028-04-23",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3380,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426195",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-23",
+          "end_date": "2028-04-30",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3380,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "426196",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-30",
+          "end_date": "2028-05-07",
+          "nights": 7,
+          "cabins_total": 13,
+          "cabins_available": 13,
+          "places_total": 26,
+          "places_available": 26,
+          "price_pp": 3380,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "4383",
+      "source_url": "https://www.liveaboard.com/diving/maldives/virgo",
+      "name": "Emperor Virgo",
+      "operator": {
+        "source_id": "58",
+        "name": "Emperor Divers"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 18,
+      "cabins": 9,
+      "crew": 0,
+      "length_m": 5,
+      "year_built": 2012,
+      "year_refit": null,
+      "description": "Emperor Virgo is a Maldives dive liveaboard operated by Emperor Divers. It accommodates up to 18 guests in 9 cabins aboard a 5-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4383/dji_0339.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4383/dji_0339.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4383/dji_0326.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4383/dji_0344.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4383/virgo-drone-2-2022.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4383/dji_0333.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4383/dji_0342.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 244,
+      "rating": 4.5,
+      "reviews": 84,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "385990",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 9,
+          "places_total": 18,
+          "places_available": 18,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385991",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 9,
+          "places_total": 18,
+          "places_available": 18,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385992",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 9,
+          "places_total": 18,
+          "places_available": 18,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385993",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 9,
+          "places_total": 18,
+          "places_available": 18,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385994",
+          "title": "Best of Maldives (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 9,
+          "cabins_available": 9,
+          "places_total": 18,
+          "places_available": 18,
+          "price_pp": 2590,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6415",
+      "source_url": "https://www.liveaboard.com/diving/maldives/princess-maani",
+      "name": "Princess Maani",
+      "operator": {
+        "source_id": "1108",
+        "name": "Top Class Cruising"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 28,
+      "cabins": 14,
+      "crew": 0,
+      "length_m": 42,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Princess Maani is a Maldives dive liveaboard operated by Top Class Cruising. It accommodates up to 28 guests in 14 cabins aboard a 42-meter vessel. Featured facilities include Free Nitrox, Jacuzzi / Hot Tub, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-25-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-25-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-28-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-24-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-29-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-30-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6415/0525pmaani101_superior_cabin_lower_deck_twin-33-.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 300,
+      "rating": 4.5,
+      "reviews": 6,
+      "amenities": [
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "385847",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3500,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385848",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3125,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385849",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3125,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "385850",
+          "title": "Best of Central Atolls (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 14,
+          "cabins_available": 14,
+          "places_total": 28,
+          "places_available": 28,
+          "price_pp": 3125,
+          "status": "open",
+          "availability_text": "available"
+        }
+      ]
+    },
+    {
+      "source_id": "6020",
+      "source_url": "https://www.liveaboard.com/diving/maldives/blue",
+      "name": "Blue",
+      "operator": {
+        "source_id": "1064",
+        "name": "Fun Azul Fleet Headquarter Club Azul/Sun and Adventure Co.,Ltd."
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 135,
+      "year_built": 2019,
+      "year_refit": null,
+      "description": "Blue is a Maldives dive liveaboard operated by Fun Azul Fleet Headquarter Club Azul/Sun and Adventure Co.,Ltd.. It accommodates up to 20 guests in 11 cabins aboard a 135-meter vessel. Featured facilities include Nitrox available, En-Suite bathrooms, Aircon Cabins, Non-Diver (Snorkeler) Friendly.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6020/2-blue-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6020/2-blue-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6020/1-blue-maldives-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6020/4-blue-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6020/3-blue-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6020/5-waterslide.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6020/side-deck.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 290,
+      "rating": 4.2,
+      "reviews": 5,
+      "amenities": [
+        "Nitrox available",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": [
+        {
+          "source_id": "394616",
+          "title": "Vaavu Atoll Trip (Male - Male)",
+          "start_date": "2028-04-01",
+          "end_date": "2028-04-08",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2700,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "394617",
+          "title": "Vaavu Atoll Trip (Male - Male)",
+          "start_date": "2028-04-08",
+          "end_date": "2028-04-15",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2700,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "394618",
+          "title": "Vaavu Atoll Trip (Male - Male)",
+          "start_date": "2028-04-15",
+          "end_date": "2028-04-22",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2700,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "394619",
+          "title": "Vaavu Atoll Trip (Male - Male)",
+          "start_date": "2028-04-22",
+          "end_date": "2028-04-29",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 10,
+          "places_total": 20,
+          "places_available": 20,
+          "price_pp": 2700,
+          "status": "open",
+          "availability_text": "available"
+        },
+        {
+          "source_id": "394620",
+          "title": "Best of Maldives - Central Trip (Male - Male)",
+          "start_date": "2028-04-29",
+          "end_date": "2028-05-06",
+          "nights": 7,
+          "cabins_total": 11,
+          "cabins_available": 0,
+          "places_total": 20,
+          "places_available": 0,
+          "price_pp": 2700,
+          "status": "closed",
+          "availability_text": "FULL"
+        }
+      ]
+    },
+    {
+      "source_id": "5953",
+      "source_url": "https://www.liveaboard.com/diving/maldives/princess-sara",
+      "name": "Princess Sara",
+      "operator": {
+        "source_id": "1373",
+        "name": "Mastro Viaggiatore"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 24,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 40,
+      "year_built": 2018,
+      "year_refit": null,
+      "description": "Princess Sara is a Maldives dive liveaboard operated by Mastro Viaggiatore. It accommodates up to 24 guests in 10 cabins aboard a 40-meter vessel. Featured facilities include Nitrox available, Jacuzzi / Hot Tub, Naturalist Guide, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5953/princess-sara-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5953/princess-sara-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5953/princess-sara-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5953/princess-sara-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5953/dji_0125.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5953/dji_0139.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5953/outdoor-lounge-1.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 170,
+      "rating": 4.5,
+      "reviews": 203,
+      "amenities": [
+        "Nitrox available",
+        "Jacuzzi / Hot Tub",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "5662",
+      "source_url": "https://www.liveaboard.com/diving/maldives/nautilus-two",
+      "name": "Nautilus Two",
+      "operator": {
+        "source_id": "1352",
+        "name": "Maldives and More"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 24,
+      "cabins": 12,
+      "crew": 0,
+      "length_m": 43,
+      "year_built": 2007,
+      "year_refit": null,
+      "description": "Nautilus Two is a Maldives dive liveaboard operated by Maldives and More. It accommodates up to 24 guests in 12 cabins aboard a 43-meter vessel. Featured facilities include Nitrox available, Free Internet, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-11.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-11.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-34.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-5.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-23.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5662/2022-nautilus-two-26.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 255,
+      "rating": 4.5,
+      "reviews": 57,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "5507",
+      "source_url": "https://www.liveaboard.com/diving/maldives/sachika",
+      "name": "Top Class Cruising Sachika",
+      "operator": {
+        "source_id": "1108",
+        "name": "Top Class Cruising"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 22,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 33,
+      "year_built": 2007,
+      "year_refit": null,
+      "description": "Top Class Cruising  Sachika is a Maldives dive liveaboard operated by Top Class Cruising. It accommodates up to 22 guests in 10 cabins aboard a 33-meter vessel. Featured facilities include Nitrox available, Jacuzzi / Hot Tub, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5507/sachika-11-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5507/sachika-11-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5507/sachika-10-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5507/sachika-9-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5507/front-main-deck.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5507/sundeck.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5507/sundeck--jacuzzi.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 184,
+      "rating": 4.7,
+      "reviews": 169,
+      "amenities": [
+        "Nitrox available",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "5473",
+      "source_url": "https://www.liveaboard.com/diving/maldives/soleil-2",
+      "name": "Soleil 2",
+      "operator": {
+        "source_id": "1213",
+        "name": "Blue K Safari Maldives PVT LTD"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 30,
+      "cabins": 15,
+      "crew": 0,
+      "length_m": 40.5,
+      "year_built": 2015,
+      "year_refit": null,
+      "description": "Soleil 2 is a Maldives dive liveaboard operated by Blue K Safari Maldives PVT LTD. It accommodates up to 30 guests in 15 cabins aboard a 40.5-meter vessel. Featured facilities include Nitrox available, Spa, Jacuzzi / Hot Tub, En-Suite bathrooms.",
+      "image": "https://img.liveaboard.com/picture_library/boat/5473/soleil-edited.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/5473/soleil-edited.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5473/soleil2_1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5473/s2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5473/soleil2_241.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5473/soleil2_242.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/5473/sun-deck.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 246,
+      "rating": 4.6,
+      "reviews": 132,
+      "amenities": [
+        "Nitrox available",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4397",
+      "source_url": "https://www.liveaboard.com/diving/maldives/carpe-vita",
+      "name": "Carpe Vita",
+      "operator": {
+        "source_id": "49",
+        "name": "Carpe Diem Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 38.2,
+      "year_built": 2011,
+      "year_refit": 2025,
+      "description": "Carpe Vita is a Maldives dive liveaboard operated by Carpe Diem Maldives. It accommodates up to 20 guests in 10 cabins aboard a 38.2-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4397/carpe-vita-starboard-profile_24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4397/carpe-vita-starboard-profile_24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4397/carpe-vita-and-dhoni_starboard.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4397/vita_and_dhoni-aerial_port_24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4397/carpe-vita-and-dhoni-aerial_24.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4397/carpe-vita-and-dhoni_aerial_port.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4397/vita_and_dhoni-10_24.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 227,
+      "rating": 4.5,
+      "reviews": 147,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4417",
+      "source_url": "https://www.liveaboard.com/diving/maldives/ocean-divine",
+      "name": "Ocean Divine",
+      "operator": {
+        "source_id": "57",
+        "name": "Ocean Divine Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 16,
+      "cabins": 8,
+      "crew": 0,
+      "length_m": 110,
+      "year_built": 2006,
+      "year_refit": 2021,
+      "description": "Ocean Divine is a Maldives dive liveaboard operated by Ocean Divine Maldives. It accommodates up to 16 guests in 8 cabins aboard a 110-meter vessel. Featured facilities include Nitrox available, Naturalist Guide, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4417/dji_0028.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4417/dji_0028.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4417/dji_0038.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4417/dji_0052.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4417/dji_0082.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4417/dji_0045.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4417/dsc_4385.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 282,
+      "rating": 4.6,
+      "reviews": 19,
+      "amenities": [
+        "Nitrox available",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4427",
+      "source_url": "https://www.liveaboard.com/diving/maldives/princess-dhonkamana",
+      "name": "Princess Dhonkamana",
+      "operator": {
+        "source_id": "63",
+        "name": "Macana Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 18,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 31,
+      "year_built": 2008,
+      "year_refit": null,
+      "description": "Princess Dhonkamana is a Maldives dive liveaboard operated by Macana Maldives. It accommodates up to 18 guests in 10 cabins aboard a 31-meter vessel. Featured facilities include Nitrox available, Naturalist Guide, En-Suite bathrooms, Aircon Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4427/main%20image.JPG?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4427/main%20image.JPG?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4427/princess-dhonkamana-liveaboard-maldives-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4427/Dhonkamana%20(1).jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4427/princess-dhonkamana-liveaboard-maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4427/princess-dhonkamana-liveaboard-maldives-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4427/Dhonkamana%20(2).jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 184,
+      "rating": 4.8,
+      "reviews": 85,
+      "amenities": [
+        "Nitrox available",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4428",
+      "source_url": "https://www.liveaboard.com/diving/maldives/princess-rani",
+      "name": "Princess Rani",
+      "operator": {
+        "source_id": "63",
+        "name": "Macana Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 22,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 35,
+      "year_built": 2008,
+      "year_refit": null,
+      "description": "Princess Rani is a Maldives dive liveaboard operated by Macana Maldives. It accommodates up to 22 guests in 11 cabins aboard a 35-meter vessel. Featured facilities include Nitrox available, Naturalist Guide, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-maldive-91.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-maldive-91.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-maldive-61.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-maldive-81.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-1-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4428/princess-rani-maldives.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 235,
+      "rating": 4.5,
+      "reviews": 39,
+      "amenities": [
+        "Nitrox available",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4442",
+      "source_url": "https://www.liveaboard.com/diving/maldives/conte-max",
+      "name": "Conte Max",
+      "operator": {
+        "source_id": "73",
+        "name": "Luxury Yacht Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 9,
+      "crew": 0,
+      "length_m": 33,
+      "year_built": 2004,
+      "year_refit": null,
+      "description": "Conte Max is a Maldives dive liveaboard operated by Luxury Yacht Maldives. It accommodates up to 20 guests in 9 cabins aboard a 33-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4442/conte-max-liveaboard-maldives-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-liveaboard-maldives-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-outside-1-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-outside-with-dhoni--dinghy.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-liveaboard-maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-second-deck-5-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4442/conte-max-second-deck-1-.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 234,
+      "rating": 4.5,
+      "reviews": 13,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "4443",
+      "source_url": "https://www.liveaboard.com/diving/maldives/duke-of-york",
+      "name": "Duke of York",
+      "operator": {
+        "source_id": "73",
+        "name": "Luxury Yacht Maldives"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 23,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 36,
+      "year_built": 2010,
+      "year_refit": null,
+      "description": "Duke of York is a Maldives dive liveaboard operated by Luxury Yacht Maldives. It accommodates up to 23 guests in 11 cabins aboard a 36-meter vessel. Featured facilities include Nitrox available, Free Nitrox, En-Suite bathrooms, Family Cabins.",
+      "image": "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-outside-4-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-sundeck2.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-sundeck.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/4443/duke-of-york-liveaboard-maldives-sundeck3.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 259,
+      "rating": 4.2,
+      "reviews": 13,
+      "amenities": [
+        "Nitrox available",
+        "Free Nitrox",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins",
+        "Non-Diver (Snorkeler) Friendly",
+        "Warm Water Showers"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard",
+        "Adventure"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "6412",
+      "source_url": "https://www.liveaboard.com/diving/maldives/legend-x",
+      "name": "Maldives Legend X",
+      "operator": {
+        "source_id": "1441",
+        "name": "Maldives Collections"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 26,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 41,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Maldives Legend X is a Maldives dive liveaboard operated by Maldives Collections. It accommodates up to 26 guests in 13 cabins aboard a 41-meter vessel. Featured facilities include Nitrox available, Free Internet, Spa, Jacuzzi / Hot Tub.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6412/ml-x--landscape-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6412/ml-x--landscape-.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6412/ml-x--aerial.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6412/9--upper-deck--sun-lounge-edit.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6412/3--top-deck--jacuzzi.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6412/4--upper-deck--lounge.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6412/5--upper-deck--lounge--2.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 350,
+      "rating": 0,
+      "reviews": 0,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "6427",
+      "source_url": "https://www.liveaboard.com/diving/maldives/legend-zen",
+      "name": "Maldives Legend Zen",
+      "operator": {
+        "source_id": "1441",
+        "name": "Maldives Collections"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 24,
+      "cabins": 13,
+      "crew": 0,
+      "length_m": 41,
+      "year_built": 2024,
+      "year_refit": null,
+      "description": "Maldives Legend Zen is a Maldives dive liveaboard operated by Maldives Collections. It accommodates up to 24 guests in 13 cabins aboard a 41-meter vessel. Featured facilities include Nitrox available, Free Internet, Spa, Jacuzzi / Hot Tub.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6427/boat_exterior_-_3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6427/boat_exterior_-_3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6427/drone_-3.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6427/ml_zen_-_1.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6427/boat-exterior--4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6427/drone_-4.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6427/ml_zen_-_4.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 310,
+      "rating": 0,
+      "reviews": 0,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Spa",
+        "Jacuzzi / Hot Tub",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "6214",
+      "source_url": "https://www.liveaboard.com/diving/maldives/maldives-legend-sea-pleasure",
+      "name": "Maldives Legend Sea Pleasure",
+      "operator": {
+        "source_id": "1441",
+        "name": "Maldives Collections"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 20,
+      "cabins": 10,
+      "crew": 0,
+      "length_m": 30,
+      "year_built": 2021,
+      "year_refit": null,
+      "description": "Maldives Legend Sea Pleasure is a Maldives dive liveaboard operated by Maldives Collections. It accommodates up to 20 guests in 10 cabins aboard a 30-meter vessel. Featured facilities include Nitrox available, Free Internet, Jacuzzi / Hot Tub, Naturalist Guide.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6214/exterior-enhanced-edit.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6214/exterior-enhanced-edit.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6214/sea-pleasure.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6214/sea-pleasure--exterior.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6214/sea-plesaure-side.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6214/sea-pleasure-aerial.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6214/boat--platform--2.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 186,
+      "rating": 4.7,
+      "reviews": 7,
+      "amenities": [
+        "Nitrox available",
+        "Free Internet",
+        "Jacuzzi / Hot Tub",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": []
+    },
+    {
+      "source_id": "6278",
+      "source_url": "https://www.liveaboard.com/diving/maldives/maldives-legend-odyssey",
+      "name": "Maldives Legend Odyssey",
+      "operator": {
+        "source_id": "1441",
+        "name": "Maldives Collections"
+      },
+      "type": "Dive Liveaboard",
+      "private_enabled": false,
+      "shared_enabled": true,
+      "guests": 22,
+      "cabins": 11,
+      "crew": 0,
+      "length_m": 30,
+      "year_built": 2022,
+      "year_refit": null,
+      "description": "Maldives Legend Odyssey is a Maldives dive liveaboard operated by Maldives Collections. It accommodates up to 22 guests in 11 cabins aboard a 30-meter vessel. Featured facilities include Free Internet, Free Nitrox, Jacuzzi / Hot Tub, Naturalist Guide.",
+      "image": "https://img.liveaboard.com/picture_library/boat/6278/odyssey-landscape-2-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+      "gallery": [
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-landscape-2-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-birds-eye-3-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-front-3-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-front-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-aerial-1-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat",
+        "https://img.liveaboard.com/picture_library/boat/6278/odyssey-aerial-sideview-2024.jpg?tr=w-1400,h-900,f-webp,fo-boat"
+      ],
+      "shared_rate": 310,
+      "rating": 0,
+      "reviews": 0,
+      "amenities": [
+        "Free Internet",
+        "Free Nitrox",
+        "Jacuzzi / Hot Tub",
+        "Naturalist Guide",
+        "En-Suite bathrooms",
+        "Family Cabins",
+        "Aircon Cabins"
+      ],
+      "experiences": [
+        "Diving",
+        "Shared liveaboard"
+      ],
+      "departures": []
+    }
+  ]
+}

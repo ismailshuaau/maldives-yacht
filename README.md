@@ -53,9 +53,9 @@ Then open:
 
 This package is a functional product MVP, not a production deployment. A commercial launch should replace demo access with secure authentication/authorization, use an object-storage service for direct photo uploads, add payments and commission settlement, transactional email/WhatsApp notifications, real availability locking, cancellation/refund workflows, operator KYC/document verification, rate limiting, audit logs, database migrations and production hosting.
 
-## Demo media
+## Demo media and listing data
 
-The interface references free-to-use Pexels photography for demonstration. Vessel names, pricing, availability, reviews and operators in the seed data are fictional/sample content.
+The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original Atollé vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
 
 ## BML Connect payment integration
 

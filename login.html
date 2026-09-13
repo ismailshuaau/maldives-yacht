@@ -1,1 +1,28 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign in — Atollé</title><link rel="stylesheet" href="assets/app.css"></head><body><nav class="topnav"><div class="wrap"><a class="brand" href="index.html">Atollé<small>Maldives by yacht</small></a></div></nav><main class="section"><div class="wrap" style="max-width:560px"><div class="panel"><div class="eyebrow">Secure access</div><h1 style="font:700 42px Georgia,serif;margin:10px 0">Sign in</h1><p class="sub">Vendor and admin tools require an authenticated account when production authentication is enabled.</p><form id="loginForm" class="formgrid" style="margin-top:24px"><div class="control span2"><label>Email</label><input name="email" type="email" autocomplete="username" required value="operator@example.com"></div><div class="control span2"><label>Password</label><input name="password" type="password" autocomplete="current-password" required value="AtolleVendor123!"></div><div class="span2"><button class="btn sea" style="width:100%">Sign in</button><div id="msg" class="muted" style="margin-top:10px"></div></div></form><div class="notice" style="margin-top:20px"><strong>Demo accounts</strong><br>Vendor: operator@example.com / AtolleVendor123!<br>Admin: admin@atolle.mv / AtolleAdmin123!<br>Guest: guest@example.com / AtolleGuest123!</div></div></div></main><script src="assets/app.js"></script><script>const params=new URLSearchParams(location.search);loginForm.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Signing in…';const d=Object.fromEntries(new FormData(e.target));try{const r=await api('/api/auth/login',{method:'POST',body:JSON.stringify(d)});setAuth(r.token,r.user);const target=params.get('next')|| (r.user.role==='admin'?'admin.html':r.user.role==='vendor'?'vendor.html':'index.html');location.href=target}catch(err){msg.textContent=err.message}});</script></body></html>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Sign in — Atollé</title>
+  <link rel="stylesheet" href="assets/app.css">
+</head>
+<body>
+  <nav class="topnav"><div class="wrap"><a class="brand" href="index.html">Atollé<small>Maldives by yacht</small></a></div></nav>
+  <main class="section"><div class="wrap" style="max-width:560px"><div class="panel">
+    <div class="eyebrow">Secure access</div>
+    <h1 style="font-size:42px;margin:10px 0">Sign in</h1>
+    <p class="sub">Operator and admin tools require an authenticated account when production authentication is enabled.</p>
+    <form id="loginForm" class="formgrid" style="margin-top:24px">
+      <div class="control span2"><label>Email</label><input name="email" type="email" autocomplete="username" required value="operator@example.com"></div>
+      <div class="control span2"><label>Password</label><input name="password" type="password" autocomplete="current-password" required value="AtolleVendor123!"></div>
+      <div class="span2"><button class="btn sea" style="width:100%">Sign in</button><div id="msg" class="muted" style="margin-top:10px"></div></div>
+    </form>
+    <div class="notice" style="margin-top:20px"><strong>Demo accounts</strong><br>Operator: operator@example.com / AtolleVendor123!<br>Admin: admin@atolle.mv / AtolleAdmin123!<br>Guest: guest@example.com / AtolleGuest123!</div>
+  </div></div></main>
+  <script src="assets/app.js"></script>
+  <script>
+    const params=new URLSearchParams(location.search);
+    loginForm.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Signing in…';const d=Object.fromEntries(new FormData(e.target));try{const r=await api('/api/auth/login',{method:'POST',body:JSON.stringify(d)});setAuth(r.token,r.user);const target=params.get('next')|| (r.user.role==='admin'?'admin.html':r.user.role==='vendor'?'vendor.html':'index.html');location.href=target}catch(err){msg.textContent=err.message}});
+  </script>
+</body>
+</html>
