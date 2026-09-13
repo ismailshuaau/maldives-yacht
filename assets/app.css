@@ -219,11 +219,6 @@ img { display:block }
 .card:hover { border-color:var(--sea) }
 .imageWrap { position:relative; border-bottom:1px solid var(--line) }
 .card img { width:100%; height:260px; object-fit:cover }
-.cardBadge {
-  position:absolute; top:12px; left:12px; padding:7px 10px; border:1px solid #365258;
-  border-radius:0; background:var(--ink); color:#fff; font-size:10px; font-weight:850;
-  letter-spacing:.06em; text-transform:uppercase;
-}
 .heart {
   position:absolute; top:12px; right:12px; display:grid; place-items:center; width:38px; height:38px;
   padding:0; border:1px solid var(--ink); border-radius:0; background:#fff; color:var(--ink);
@@ -251,7 +246,6 @@ img { display:block }
 .sharedImage { position:relative; min-height:290px; overflow:hidden; border-right:1px solid var(--line) }
 .sharedImage img { width:100%; height:100%; object-fit:cover; transition:transform .25s }
 .sharedImage:hover img { transform:scale(1.018) }
-.sharedImage > span { position:absolute; top:14px; left:14px; padding:7px 10px; background:var(--ink); color:#fff; font-size:10px; font-weight:850; letter-spacing:.06em; text-transform:uppercase }
 .sharedInfo { position:relative; padding:25px 28px 72px }
 .sharedTitle { display:flex; align-items:flex-start; justify-content:space-between; gap:22px }
 .sharedTitle h3 { margin:6px 0 7px; font:700 clamp(28px,3vw,36px)/1.05 var(--font-display); letter-spacing:-.02em }
