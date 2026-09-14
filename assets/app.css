@@ -533,3 +533,233 @@ footer {
   .table { min-width:650px }
   .panel { overflow-x:auto }
 }
+
+/* Yacht detail — reference-inspired hierarchy with Atollé styling */
+.yachtPage { padding-bottom:0 }
+.yachtHero { padding-top:34px }
+.yachtHeroHead { display:flex; align-items:flex-end; justify-content:space-between; gap:30px }
+.yachtHeroHead h1 { margin:10px 0 5px; font:700 clamp(46px,6vw,74px)/.95 var(--font-display); letter-spacing:-.035em }
+.yachtModeTags { display:flex; gap:6px }
+.yachtHeroMeta { color:var(--muted); font-size:14px; font-weight:700 }
+.heroActions { display:flex; align-items:center; gap:10px; flex:none }
+.saveYacht { min-height:45px; padding:0 15px; border:1px solid var(--line-strong); background:#fff; color:var(--ink); cursor:pointer; font-weight:800 }
+.saveYacht:hover,.saveYacht[aria-pressed="true"] { border-color:var(--sea); color:var(--sea) }
+.saveYacht span { margin-right:5px; font-size:20px }
+.heroRating { display:grid; min-width:94px; min-height:45px; padding:7px 12px; border:1px solid var(--line-strong); background:#fff }
+.heroRating strong { font-size:14px }
+.heroRating span { color:var(--muted); font-size:9px; font-weight:750; text-transform:uppercase }
+.yachtGallery { position:relative; display:grid; grid-template-columns:1.75fr 1fr; grid-template-rows:246px 246px; gap:7px; margin-top:25px; background:var(--ink) }
+.yachtGallery button { min-width:0; padding:0; overflow:hidden; border:0; border-radius:0; background:var(--ink); cursor:pointer }
+.yachtGallery img { width:100%; height:100%; object-fit:cover; transition:transform .35s ease,opacity .2s }
+.yachtGallery button:hover img { opacity:.92; transform:scale(1.015) }
+.galleryMain { grid-row:1/3 }
+.viewAllPhotos { position:absolute; right:16px; bottom:16px; min-height:40px; padding:0 14px !important; border:1px solid var(--ink) !important; background:#fff !important; color:var(--ink); font-size:12px; font-weight:850 }
+.heroFacts { display:grid; grid-template-columns:.8fr 1fr 1.3fr; border:1px solid var(--line-strong); border-top:0; background:#fff }
+.heroFacts > div { min-width:0; padding:17px 20px; border-left:1px solid var(--line) }
+.heroFacts > div:first-child { border-left:0 }
+.heroFacts span,.heroFacts strong { display:block }
+.heroFacts span { margin-bottom:4px; color:var(--muted); font-size:9px; font-weight:850; letter-spacing:.11em; text-transform:uppercase }
+.heroFacts strong { overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap }
+.yachtLayout { display:grid; grid-template-columns:minmax(0,1fr); gap:62px; padding-top:52px }
+.yachtContent { min-width:0 }
+.yachtAnchorNav { position:sticky; top:80px; z-index:12; display:flex; gap:24px; overflow:auto; padding:14px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); background:rgba(251,250,246,.96); scrollbar-width:none }
+.yachtAnchorNav a { flex:none; color:var(--muted); font-size:11px; font-weight:800 }
+.yachtAnchorNav a:hover { color:var(--sea) }
+.yachtSection { scroll-margin-top:140px; padding:62px 0; border-bottom:1px solid var(--line) }
+.yachtSection > .eyebrow { margin:0 0 11px }
+.yachtSection h2 { margin:0 0 21px; font:700 clamp(34px,4vw,47px)/1 var(--font-display); letter-spacing:-.025em }
+.yachtLead { max-width:760px; margin:0; color:#30494e; font-size:17px; line-height:1.8 }
+.highlightGrid { display:grid; grid-template-columns:repeat(3,1fr); margin-top:32px; border:1px solid var(--line-strong); background:#fff }
+.highlightGrid > div { min-height:104px; padding:20px; border-left:1px solid var(--line) }
+.highlightGrid > div:first-child { border-left:0 }
+.highlightGrid small,.highlightGrid strong { display:block }
+.highlightGrid small { margin-bottom:9px; color:var(--sea); font-size:9px; font-weight:850; letter-spacing:.1em; text-transform:uppercase }
+.highlightGrid strong { font-family:var(--font-display); font-size:21px; line-height:1.15 }
+.amenityGrid { display:grid; grid-template-columns:1fr 1fr; border-top:1px solid var(--line-strong) }
+.amenityGrid > div { display:flex; gap:11px; align-items:center; min-height:53px; border-bottom:1px solid var(--line); font-size:13px; font-weight:700 }
+.amenityGrid > div:nth-child(odd) { margin-right:22px }
+.amenityGrid span { display:grid; place-items:center; width:23px; height:23px; border:1px solid var(--sea); color:var(--sea); font-size:11px }
+.experienceGrid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
+.experienceGrid > div { min-height:125px; padding:18px; border:1px solid var(--line); background:#fff }
+.experienceGrid span,.experienceGrid strong,.experienceGrid small { display:block }
+.experienceMark { margin-bottom:20px; color:var(--sea); font-size:26px; line-height:1 }
+.experienceGrid strong { font-family:var(--font-display); font-size:20px }
+.experienceGrid small { margin-top:4px; color:var(--muted); font-size:10px }
+.specList { margin:0; border-top:1px solid var(--line-strong) }
+.specList > div { display:grid; grid-template-columns:1fr 1fr; padding:14px 4px; border-bottom:1px solid var(--line) }
+.specList dt { color:var(--muted); font-size:12px }
+.specList dd { margin:0; font-size:13px; font-weight:800; text-align:right }
+.sectionTitleRow { display:flex; align-items:center; justify-content:space-between; gap:20px }
+.sectionTitleRow h2 { margin-bottom:10px }
+.sectionIntro { margin:0 0 22px; color:var(--muted) }
+.monthPickerInline { display:flex; gap:7px; overflow:auto; padding-bottom:10px; scrollbar-width:thin }
+.monthChoice { flex:none; min-height:40px; padding:0 14px; border:1px solid var(--line-strong); background:#fff; color:var(--muted); cursor:pointer; font-size:11px; font-weight:800 }
+.monthChoice:hover,.monthChoice.active { border-color:var(--sea); background:var(--sea); color:#fff }
+.tripList { display:grid; gap:9px; margin-top:12px }
+.tripCard { display:grid; grid-template-columns:1.25fr 1.7fr 1.3fr .8fr 24px; gap:14px; align-items:center; width:100%; min-height:86px; padding:15px 16px; border:1px solid var(--line); border-left:3px solid transparent; background:#fff; color:var(--ink); cursor:pointer; font:inherit; text-align:left }
+.tripCard:hover,.tripCard.selected { border-color:var(--sea); border-left-color:var(--sea); background:#f2f8f7 }
+.tripCard > span { display:grid; gap:4px; min-width:0 }
+.tripCard strong { font-size:12px; line-height:1.3 }
+.tripCard small { color:var(--muted); font-size:10px; line-height:1.35 }
+.tripPrice { text-align:right }
+.tripPrice strong { font-size:15px }
+.tripArrow { display:block !important; color:var(--sea); font-size:22px }
+.privateAvailability { padding:26px; border-left:3px solid var(--sea); background:#edf6f4 }
+.privateAvailability p { margin:0 0 20px; color:#345156; line-height:1.7 }
+.availabilityToggle { max-width:430px; margin:0 0 24px }
+.ratingPanel { display:flex; align-items:center; gap:22px; padding:25px; border:1px solid var(--line-strong); background:#fff }
+.ratingScore { display:grid; place-items:center; width:88px; height:88px; flex:none; background:var(--sea); color:#fff; font:700 37px/1 var(--font-display) }
+.ratingPanel strong { font-family:var(--font-display); font-size:23px }
+.ratingPanel p { margin:5px 0 0; color:var(--muted); font-size:12px }
+.yachtBookingBox { top:104px; padding:25px }
+.yachtBookingBox > .eyebrow { margin:0 0 7px }
+.yachtBookingBox h3 { margin-bottom:20px }
+.yachtBookingBox .summaryPrice { display:flex; align-items:baseline; gap:3px; margin-top:13px }
+.yachtBookingBox .summaryPrice span { color:var(--muted); font-size:11px }
+.yachtBookingBox form { display:grid; gap:11px }
+.yachtBookingBox .formgrid { gap:9px }
+.yachtBookingBox .control { margin:0 }
+.selectionPrompt { margin-bottom:14px; padding:15px; border-left:3px solid var(--gold); background:#f7f1e7; color:#55452e; font-size:12px }
+.awaitingTrip > :not(.bookingMessage) { opacity:.48; pointer-events:none }
+.selectedTrip { display:grid; gap:3px; padding:13px; border:1px solid var(--sea); background:#f0f8f6 }
+.selectedTrip small { color:var(--sea); font-size:9px; font-weight:850; letter-spacing:.1em; text-transform:uppercase }
+.selectedTrip strong { font-family:var(--font-display); font-size:18px }
+.selectedTrip span { color:var(--muted); font-size:10px }
+.bookingSubmit { width:100%; margin-top:3px }
+.bookingMessage { margin:0; font-size:11px }
+.bookingMessage #bmlPayBtn { width:100%; margin:10px 0 5px }
+.bookingAssurance { margin:17px 0 0; padding-top:14px; border-top:1px solid var(--line); color:var(--muted); font-size:10px; line-height:1.6 }
+.galleryLightbox { position:fixed; inset:0; z-index:200; overflow:auto; padding:24px; background:rgba(2,15,18,.9) }
+.galleryLightboxCard { width:min(1100px,100%); margin:auto; padding:24px; background:var(--cream) }
+.galleryLightboxHead { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px }
+.galleryLightboxHead h2 { margin:0; font-size:35px }
+.galleryAll { columns:2; column-gap:10px }
+.galleryAll img { width:100%; margin-bottom:10px; break-inside:avoid }
+.modalOpen { overflow:hidden }
+.mobileBookingBar { display:none }
+
+.bookingMain { min-height:calc(100vh - 240px); padding:58px 0 90px }
+.bookingHeader { max-width:760px; margin-bottom:30px }
+.bookingHeader h1 { margin:8px 0 10px; font:700 clamp(42px,5vw,62px)/1 var(--font-display); letter-spacing:-.03em }
+.bookingHeader > p:last-child { margin:0; color:var(--muted); font-size:16px }
+.bookingSteps { display:grid; grid-template-columns:repeat(3,1fr); max-width:820px; margin:0 0 34px; padding:0; border:1px solid var(--line-strong); list-style:none; background:#fff }
+.bookingSteps li { display:flex; align-items:center; gap:11px; min-height:64px; padding:12px 16px; border-left:1px solid var(--line); color:var(--muted) }
+.bookingSteps li:first-child { border-left:0 }
+.bookingSteps span { display:grid; place-items:center; width:29px; height:29px; flex:none; border:1px solid var(--line-strong); font-size:11px; font-weight:850 }
+.bookingSteps strong { font-size:12px }
+.bookingSteps .active { background:var(--aqua); color:var(--sea-hover) }
+.bookingSteps .active span { border-color:var(--sea); background:var(--sea); color:#fff }
+.bookingSteps .complete span { border-color:var(--sea); color:var(--sea) }
+.bookingWizardLayout { display:grid; grid-template-columns:minmax(0,1fr) 370px; gap:38px; align-items:start }
+.wizardCard,.tripSummary { border:1px solid var(--line-strong); background:#fff }
+.wizardStep,.wizardSuccess { padding:34px }
+.wizardStep > .eyebrow,.wizardSuccess > .eyebrow { margin:0 0 8px }
+.wizardStep h2,.wizardSuccess h2 { margin:0 0 25px; font:700 36px/1.05 var(--font-display) }
+.wizardStep .control { margin-bottom:18px }
+.wizardStep .control input,.wizardStep .control textarea { min-height:48px }
+.wizardStep .control textarea { min-height:126px }
+.wizardStep .control small,.fieldHelp { display:block; margin:7px 0 0; color:var(--muted); font-size:11px; line-height:1.5 }
+.optional { color:var(--muted); font-size:9px; font-weight:700; letter-spacing:0; text-transform:none }
+.wizardTrip { display:grid; gap:4px; margin-bottom:22px; padding:18px; border-left:3px solid var(--sea); background:#edf6f4 }
+.wizardTrip span { color:var(--sea); font-size:11px; font-weight:800 }
+.wizardTrip strong { font:700 22px/1.1 var(--font-display) }
+.wizardTrip small { color:var(--muted) }
+.wizardActions { display:flex; align-items:center; justify-content:space-between; gap:14px; margin-top:28px; padding-top:22px; border-top:1px solid var(--line) }
+.bookingNotice { margin:16px 0 0; padding:13px 15px; border-left:3px solid var(--danger); background:#faeeee; font-size:12px }
+.bookingNotice.danger { color:var(--danger) }
+.tripSummary { position:sticky; top:104px }
+.tripSummaryImage { height:205px; overflow:hidden; background:var(--sand) }
+.tripSummaryImage img { width:100%; height:100%; object-fit:cover }
+.tripSummaryBody { padding:23px }
+.tripSummaryBody > .eyebrow { margin:0 0 5px }
+.tripSummaryBody h2 { margin:0 0 18px; font:700 29px/1.05 var(--font-display) }
+.summaryFacts { border-top:1px solid var(--line) }
+.summaryFacts > div,.reviewDetails > div { display:flex; justify-content:space-between; gap:20px; padding:12px 0; border-bottom:1px solid var(--line) }
+.summaryFacts span,.reviewDetails span { color:var(--muted); font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase }
+.summaryFacts strong,.reviewDetails strong { font-size:12px; text-align:right }
+.summaryFacts .illustrative strong { color:var(--gold) }
+.summaryPriceRows { margin-top:18px; padding-top:10px; border-top:2px solid var(--ink) }
+.summaryPriceRows > div { display:flex; justify-content:space-between; gap:18px; padding:6px 0; font-size:12px }
+.summaryPriceRows > div:first-child { font-size:15px }
+.summaryPriceRows p { margin:4px 0; color:var(--muted); font-size:11px }
+.reviewDetails { border-top:1px solid var(--line) }
+.reviewDetails .reviewTotal { margin-top:12px; padding-top:18px; border-top:2px solid var(--ink) }
+.reviewDetails .reviewTotal strong { color:var(--sea); font:700 24px/1 var(--font-display) }
+.illustrativeCallout { padding:13px; border-left:3px solid var(--gold); background:#f7f1e7; color:#55452e; font-size:12px }
+.reserveTerms { margin-top:22px; padding:18px; background:var(--sand) }
+.reserveTerms p { margin:5px 0 0; color:var(--muted); font-size:12px }
+.wizardSuccess { text-align:center }
+.successMark { display:grid; place-items:center; width:62px; height:62px; margin:0 auto 18px; background:var(--sea); color:#fff; font-size:27px }
+.wizardSuccess .eyebrow { text-align:center }
+.successReference { margin:24px 0 6px; font-size:16px }
+.successReference strong { color:var(--sea) }
+.wizardSuccess #holdExpiry { margin:0 0 24px; color:var(--muted) }
+.wizardSuccess .btn { min-width:240px }
+
+@media (max-width:980px) {
+  .yachtGallery { grid-template-rows:190px 190px }
+  .yachtLayout { grid-template-columns:1fr; gap:0 }
+  .yachtBookingBox { position:static; margin:40px 0 }
+  .yachtContent { display:contents }
+  .yachtAnchorNav,.yachtSection { grid-column:1 }
+  .bookingWizardLayout { grid-template-columns:1fr }
+  .tripSummary { position:static; grid-row:1; display:grid; grid-template-columns:180px 1fr }
+  .tripSummaryImage { height:100% }
+}
+@media (max-width:650px) {
+  .yachtPage { padding-bottom:76px }
+  .yachtHero { padding-top:25px }
+  .yachtHeroHead { align-items:flex-start; flex-direction:column; gap:17px }
+  .yachtHeroHead h1 { font-size:48px }
+  .heroActions { width:100%; justify-content:space-between }
+  .yachtGallery { grid-template-columns:1fr; grid-template-rows:300px; margin-right:-16px; margin-left:-16px }
+  .galleryMain { grid-row:auto }
+  .gallerySide { display:none }
+  .viewAllPhotos { display:block !important; right:12px; bottom:12px }
+  .heroFacts { grid-template-columns:1fr; margin:0 -16px; border-right:0; border-left:0 }
+  .heroFacts > div { padding:14px 16px; border-top:1px solid var(--line); border-left:0 }
+  .heroFacts > div:first-child { border-top:0 }
+  .yachtLayout { padding-top:28px }
+  .yachtAnchorNav { top:70px; gap:20px; margin:0 -16px; padding:13px 16px }
+  .yachtSection { padding:48px 0; scroll-margin-top:120px }
+  .highlightGrid,.experienceGrid { grid-template-columns:1fr }
+  .highlightGrid > div { min-height:0; border-top:1px solid var(--line); border-left:0 }
+  .highlightGrid > div:first-child { border-top:0 }
+  .amenityGrid { grid-template-columns:1fr }
+  .amenityGrid > div:nth-child(odd) { margin-right:0 }
+  .tripCard { position:relative; grid-template-columns:1fr 1fr; gap:15px 12px; padding:17px 37px 17px 15px }
+  .tripItinerary { grid-column:1/-1; grid-row:1 }
+  .tripPrice { text-align:left }
+  .tripArrow { position:absolute; top:50%; right:12px; transform:translateY(-50%) }
+  .ratingPanel { align-items:flex-start; padding:18px }
+  .ratingScore { width:70px; height:70px; font-size:30px }
+  .galleryLightbox { padding:8px }
+  .galleryLightboxCard { padding:15px }
+  .galleryAll { columns:1 }
+  .mobileBookingBar { position:fixed; right:0; bottom:0; left:0; z-index:90; display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:76px; padding:10px 16px; border-top:1px solid var(--line-strong); background:#fff; box-shadow:0 -8px 25px rgba(4,25,29,.12) }
+  .mobileBookingBar small,.mobileBookingBar strong { display:block }
+  .mobileBookingBar small { color:var(--muted); font-size:9px; font-weight:800; text-transform:uppercase }
+  .mobileBookingBar strong { max-width:180px; overflow:hidden; font-size:12px; text-overflow:ellipsis; white-space:nowrap }
+  .mobileBookingBar .btn { flex:none }
+  .yachtPage footer { margin-bottom:-76px }
+  .bookingMain { padding:30px 0 58px }
+  .bookingHeader h1 { font-size:42px }
+  .bookingSteps { margin-right:-16px; margin-left:-16px }
+  .bookingSteps li { justify-content:center; min-height:57px; padding:9px 5px }
+  .bookingSteps strong { display:none }
+  .bookingWizardLayout { gap:14px; margin-right:-16px; margin-left:-16px }
+  .tripSummary { grid-template-columns:92px 1fr; border-right:0; border-left:0 }
+  .tripSummaryBody { padding:15px }
+  .tripSummaryBody > .eyebrow { display:none }
+  .tripSummaryBody h2 { margin-bottom:8px; font-size:22px }
+  .tripSummaryImage { min-height:116px }
+  .summaryFacts { display:flex; flex-wrap:wrap; gap:4px 14px; border:0 }
+  .summaryFacts > div { display:block; padding:0; border:0 }
+  .summaryFacts span { display:none }
+  .summaryFacts strong { font-size:10px; text-align:left }
+  .summaryPriceRows { display:none }
+  .wizardCard { border-right:0; border-left:0 }
+  .wizardStep,.wizardSuccess { padding:25px 16px }
+  .wizardStep h2,.wizardSuccess h2 { font-size:32px }
+  .wizardActions .btn { flex:1 }
+}

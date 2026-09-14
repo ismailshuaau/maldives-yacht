@@ -49,6 +49,27 @@ Then open:
 - Vendor portal: http://localhost:8000/vendor.html
 - Admin portal: http://localhost:8000/admin.html
 
+## Cloudflare staging
+
+The Cloudflare-native staging deployment is available at:
+
+- https://atolle-staging.aaishathhanaa.workers.dev
+
+It serves the frontend through Workers Static Assets and runs the API in a TypeScript Worker backed by the `atolle-staging` D1 database. Authentication is enforced, the documented demo accounts are enabled, and BML remains in mock/sandbox mode. The demo accounts are staging-only and must not be enabled in production.
+
+To validate and redeploy:
+
+```bash
+npm install
+npx wrangler types --env staging
+npx tsc
+npx wrangler d1 migrations apply DB --env staging --remote
+npx wrangler d1 execute DB --env staging --remote --file cloudflare/staging/enable-demo-users.sql
+npm run deploy:staging
+```
+
+Do not promote this staging environment to live payments until the remaining items in `PRODUCTION-READINESS.md` are complete.
+
 ## Production work still required
 
 This package is a functional product MVP, not a production deployment. A commercial launch should replace demo access with secure authentication/authorization, use an object-storage service for direct photo uploads, add payments and commission settlement, transactional email/WhatsApp notifications, real availability locking, cancellation/refund workflows, operator KYC/document verification, rate limiting, audit logs, database migrations and production hosting.

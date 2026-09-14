@@ -1,0 +1,19 @@
+{
+  "name": "atolle-cloudflare",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p public/assets && cp index.html yacht.html booking.html vendor.html admin.html login.html payment-return.html public/ && cp -R assets/. public/assets/",
+    "check:assets": "node scripts/check-static-assets.mjs",
+    "types": "wrangler types --env staging",
+    "dev": "npm run build && wrangler dev --env staging",
+    "deploy:staging": "npm run build && wrangler deploy --env staging",
+    "check": "npm run types && npx tsc && npm run build && npm run check:assets && wrangler deploy --env staging --dry-run && wrangler check startup --env staging"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "@types/node": "latest",
+    "typescript": "latest",
+    "wrangler": "latest"
+  }
+}

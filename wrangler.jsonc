@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "atolle",
+  "main": "./cloudflare/src/worker.ts",
+  "compatibility_date": "2026-09-14",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "env": {
+    "staging": {
+      "name": "atolle-staging",
+      "assets": {
+        "directory": "./public",
+        "binding": "ASSETS",
+        "run_worker_first": ["/api/*"]
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "atolle-staging",
+          "database_id": "7426e4a1-ff8a-4bea-8f3c-56a7e52144a2",
+          "migrations_dir": "cloudflare/migrations"
+        }
+      ],
+      "vars": {
+        "ENVIRONMENT": "staging",
+        "ENFORCE_AUTH": "1",
+        "SESSION_HOURS": "24",
+        "BML_MODE": "mock",
+        "BML_ENV": "sandbox",
+        "BML_CURRENCY": "USD"
+      }
+    }
+  }
+}
