@@ -3,12 +3,26 @@ import { dirname, join, relative, resolve } from 'node:path';
 
 const publicDir = resolve('public');
 const cssFiles = [];
+const htmlFiles = [];
 
 function collectCssFiles(directory) {
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) collectCssFiles(path);
     else if (entry.isFile() && entry.name.endsWith('.css')) cssFiles.push(path);
+    else if (entry.isFile() && entry.name.endsWith('.html')) htmlFiles.push(path);
+  }
+}
+
+for (const htmlFile of htmlFiles) {
+  const html = readFileSync(htmlFile, 'utf8');
+  for (const match of html.matchAll(/(?:src|href)\s*=\s*(["'])(.*?)\1/gi)) {
+    const reference = match[2].trim();
+    if (!reference || /^(?:data:|https?:|mailto:|tel:|#|\/\/)/i.test(reference)) continue;
+    const pathOnly = reference.split(/[?#]/, 1)[0];
+    if (!pathOnly) continue;
+    const assetPath = resolve(dirname(htmlFile), pathOnly);
+    if (!assetPath.startsWith(`${publicDir}/`) || !existsSync(assetPath)) missing.push(`${relative(publicDir, htmlFile)} -> ${reference}`);
   }
 }
 
@@ -36,4 +50,4 @@ if (missing.length) {
   throw new Error(`Missing relative CSS assets:\n${missing.map(item => `- ${item}`).join('\n')}`);
 }
 
-console.log(`Verified relative asset references in ${cssFiles.length} CSS file${cssFiles.length === 1 ? '' : 's'}.`);
+console.log(`Verified relative asset references in ${cssFiles.length} CSS and ${htmlFiles.length} HTML files.`);

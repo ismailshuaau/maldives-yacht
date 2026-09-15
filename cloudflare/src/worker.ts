@@ -5,6 +5,8 @@ const JSON_HEADERS = {
   "x-frame-options": "DENY",
   "referrer-policy": "strict-origin-when-cross-origin",
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
+  "strict-transport-security": "max-age=31536000; includeSubDomains",
+  "content-security-policy": "default-src 'self'; img-src 'self' https: data:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'",
 };
 
 function json(data: unknown, status = 200): Response {
@@ -35,7 +37,7 @@ async function passwordMatches(password: string, encoded: string): Promise<boole
     const parts = encoded.split("$");
     const iterations = parts.length === 3 ? Number(parts[0]) : 210_000;
     const [salt, expected] = parts.length === 3 ? parts.slice(1) : parts;
-    if (!salt || !expected || !Number.isInteger(iterations) || iterations < 1 || iterations > 100_000) return false;
+    if (!salt || !expected || !Number.isInteger(iterations) || iterations < 1 || iterations > 310_000) return false;
     const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
     const saltBytes = base64Bytes(salt);
     const saltBuffer = saltBytes.buffer.slice(saltBytes.byteOffset, saltBytes.byteOffset + saltBytes.byteLength) as ArrayBuffer;
@@ -64,19 +66,91 @@ function row(raw: DbRow | null): DbRow | null {
   return item;
 }
 function rows(result: D1Result<DbRow>): DbRow[] { return result.results.map((item) => row(item) as DbRow); }
+function safePayment(item: DbRow): DbRow { const value = row(item) as DbRow; delete value.raw_response; delete value.access_token_hash; delete value.idempotency_key; return value; }
 
 async function body(request: Request): Promise<DbRow> {
-  const length = Number(request.headers.get("content-length") || 0);
-  if (length > 65_536) throw new HttpError("Request body too large", 413);
-  try { return await request.json<DbRow>(); }
-  catch { throw new HttpError("A valid JSON body is required", 400); }
+  const maximum = 65_536, declared = Number(request.headers.get("content-length") || 0);
+  if (declared > maximum) throw new HttpError("Request body too large", 413);
+  if (!request.body) throw new HttpError("A valid JSON body is required", 400);
+  const reader = request.body.getReader(), chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > maximum) { await reader.cancel(); throw new HttpError("Request body too large", 413); }
+      chunks.push(value);
+    }
+    const bytes = new Uint8Array(size); let offset = 0;
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+    const parsed: unknown = JSON.parse(new TextDecoder().decode(bytes));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("object required");
+    return parsed as DbRow;
+  } catch (error) {
+    if (error instanceof HttpError) throw error;
+    throw new HttpError("A valid JSON object is required", 400);
+  }
 }
 class HttpError extends Error { constructor(message: string, readonly status = 400) { super(message); } }
 
+function textField(data: DbRow, key: string, maximum: number, required = false): string {
+  const value = String(data[key] ?? "").trim();
+  if (required && !value) throw new HttpError(`${key} is required`);
+  if (value.length > maximum) throw new HttpError(`${key} is too long`);
+  return value;
+}
+function numberField(data: DbRow, key: string, options: { integer?: boolean; minimum?: number; maximum?: number; required?: boolean } = {}): number | null {
+  if (data[key] === undefined || data[key] === null || data[key] === "") {
+    if (options.required) throw new HttpError(`${key} is required`);
+    return null;
+  }
+  const value = Number(data[key]);
+  if (!Number.isFinite(value) || (options.integer && !Number.isInteger(value)) || (options.minimum != null && value < options.minimum) || (options.maximum != null && value > options.maximum)) throw new HttpError(`${key} is invalid`);
+  return value;
+}
+function emailField(data: DbRow, key = "email"): string {
+  const value = textField(data, key, 254, true).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw new HttpError(`${key} is invalid`);
+  return value;
+}
+function enumField(data: DbRow, key: string, allowed: readonly string[], fallback?: string): string {
+  const value = String(data[key] ?? fallback ?? "");
+  if (!allowed.includes(value)) throw new HttpError(`${key} is invalid`);
+  return value;
+}
+function urlField(data: DbRow, key: string): string | null {
+  const value = textField(data, key, 2_048);
+  if (!value) return null;
+  try { if (new URL(value).protocol !== "https:") throw new Error(); }
+  catch { throw new HttpError(`${key} must be an HTTPS URL`); }
+  return value;
+}
+function stringList(data: DbRow, key: string, maximumItems = 50): string[] {
+  if (data[key] == null) return [];
+  if (!Array.isArray(data[key]) || data[key].length > maximumItems) throw new HttpError(`${key} is invalid`);
+  return data[key].map((value) => {
+    const item = String(value).trim();
+    if (!item || item.length > 120) throw new HttpError(`${key} is invalid`);
+    return item;
+  });
+}
+function validCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.valueOf()) && date.toISOString().slice(0, 10) === value;
+}
+function requestToken(request: Request, name: string): string { return request.headers.get(name) || ""; }
+async function hasToken(token: string, expectedHash: unknown): Promise<boolean> {
+  return Boolean(token && expectedHash && constantEqual(await sha256(token), String(expectedHash)));
+}
+
 async function userFor(request: Request, env: Env): Promise<DbRow | null> {
   const header = request.headers.get("authorization") || "";
-  if (!header.toLowerCase().startsWith("bearer ")) return null;
-  const tokenHash = await sha256(header.slice(7).trim());
+  const cookieToken = (request.headers.get("cookie") || "").split(";").map((item) => item.trim()).find((item) => item.startsWith("atolle_session="))?.slice("atolle_session=".length) || "";
+  const token = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : cookieToken;
+  if (!token) return null;
+  const tokenHash = await sha256(token);
   return row(await env.DB.prepare(`SELECT u.* FROM sessions s JOIN users u ON u.id=s.user_id
     WHERE s.token_hash=? AND s.expires_at>? AND u.active=1`).bind(tokenHash, now()).first<DbRow>());
 }
@@ -85,13 +159,35 @@ async function requireRole(request: Request, env: Env, roles: string[]): Promise
   if (actor && roles.includes(String(actor.role))) return actor;
   throw new HttpError("Authentication required", 401);
 }
-async function issueSession(env: Env, userId: number): Promise<{ token: string; expires_at: string }> {
+async function canAccessBooking(request: Request, env: Env, booking: DbRow): Promise<boolean> {
+  const actor = await userFor(request, env);
+  if (actor?.role === "admin" || (actor?.role === "vendor" && actor.vendor_id === booking.vendor_id)) return true;
+  return hasToken(requestToken(request, "x-booking-token"), booking.access_token_hash);
+}
+async function requirePaymentAccess(request: Request, env: Env, paymentId: unknown): Promise<DbRow> {
+  const payment = row(await env.DB.prepare(`SELECT p.*,y.vendor_id FROM payments p JOIN bookings b ON b.id=p.booking_id
+    JOIN yachts y ON y.id=b.yacht_id WHERE p.id=?`).bind(paymentId).first<DbRow>());
+  if (!payment) throw new HttpError("Not found", 404);
+  const actor = await userFor(request, env);
+  if (actor?.role === "admin" || (actor?.role === "vendor" && actor.vendor_id === payment.vendor_id)) return payment;
+  if (await hasToken(requestToken(request, "x-payment-token"), payment.access_token_hash)) return payment;
+  throw new HttpError("Not found", 404);
+}
+async function enforceLoginRateLimit(request: Request, env: Env, email: string): Promise<string> {
+  const client = request.headers.get("cf-connecting-ip") || "unknown", key = await sha256(`${client}\n${email}`);
+  const windowStarted = Math.floor(Date.now() / 60_000) * 60_000;
+  await env.DB.prepare(`INSERT INTO login_rate_limits(key_hash,window_started,attempts) VALUES(?,?,1)
+    ON CONFLICT(key_hash) DO UPDATE SET attempts=CASE WHEN window_started=? THEN attempts+1 ELSE 1 END,window_started=?`)
+    .bind(key, windowStarted, windowStarted, windowStarted).run();
+  const found = await env.DB.prepare("SELECT attempts FROM login_rate_limits WHERE key_hash=?").bind(key).first<{ attempts: number }>();
+  if (Number(found?.attempts || 0) > 8) throw new HttpError("Too many sign-in attempts. Try again shortly.", 429);
+  return key;
+}
+async function newSession(env: Env): Promise<{ token: string; tokenHash: string; expires_at: string }> {
   const tokenBytes = crypto.getRandomValues(new Uint8Array(36));
   const token = btoa(String.fromCharCode(...tokenBytes)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
   const expires = new Date(Date.now() + Number(env.SESSION_HOURS || 24) * 3_600_000).toISOString();
-  await env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)")
-    .bind(await sha256(token), userId, expires, now()).run();
-  return { token, expires_at: expires };
+  return { token, tokenHash: await sha256(token), expires_at: expires };
 }
 async function audit(env: Env, actor: DbRow | null, action: string, type: string, id?: unknown, detail: DbRow = {}): Promise<void> {
   await env.DB.prepare(`INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at)
@@ -137,7 +233,7 @@ async function departuresFor(env: Env, yachtId?: unknown, onlyOpen = false): Pro
   return found.results.map(joinedDeparture);
 }
 function validDates(start: unknown, end: unknown): boolean {
-  return typeof start === "string" && typeof end === "string" && /^\d{4}-\d{2}-\d{2}$/.test(start) && /^\d{4}-\d{2}-\d{2}$/.test(end) && end > start;
+  return typeof start === "string" && typeof end === "string" && validCalendarDate(start) && validCalendarDate(end) && end > start;
 }
 function dateNights(start: string, end: string): number { return Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000); }
 
@@ -159,7 +255,7 @@ type BookingSelection = {
 };
 
 async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection> {
-  const yacht = row(await env.DB.prepare("SELECT * FROM yachts WHERE id=?").bind(data.yacht_id).first<DbRow>());
+  const yacht = row(await env.DB.prepare("SELECT * FROM yachts WHERE id=? AND status='live' AND verified=1").bind(data.yacht_id).first<DbRow>());
   if (!yacht) throw new HttpError("Yacht not found", 404);
   const mode = String(data.mode || ""), guests = Number(data.guests || 1);
   if (!["private", "shared"].includes(mode)) throw new HttpError("mode must be private or shared");
@@ -170,6 +266,7 @@ async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection
   if (mode === "private") {
     if (!yacht.private_enabled) throw new HttpError("Private charter unavailable", 409);
     if (!validDates(start, end)) throw new HttpError("Valid start_date and end_date are required");
+    if (start < now().slice(0, 10)) throw new HttpError("Start date cannot be in the past");
     nights = dateNights(start, end);
     if (guests > Number(yacht.guests)) throw new HttpError("Guest count exceeds yacht capacity");
     if (await overlap(env, yacht.id, start, end)) throw new HttpError("These dates are no longer available", 409);
@@ -183,6 +280,7 @@ async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection
     const raw = await env.DB.prepare("SELECT * FROM departures WHERE id=? AND yacht_id=? AND status='open'").bind(departureId, yacht.id).first<DbRow>();
     if (!raw) throw new HttpError("Liveaboard departure not found", 404);
     departureRow = await departure(env, raw);
+    if (String(departureRow.end_date) < now().slice(0, 10)) throw new HttpError("This departure has ended", 409);
     if (guests > Number(departureRow.places_remaining)) throw new HttpError("Not enough passenger places remain", 409);
     if (cabinsBooked > Number(departureRow.cabins_remaining)) throw new HttpError("Not enough cabins remain", 409);
     start = String(departureRow.start_date); end = String(departureRow.end_date); nights = Number(departureRow.nights);
@@ -214,7 +312,15 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
   }
   if (path === "/api/yachts") {
     const clauses: string[] = [], values: unknown[] = [];
-    for (const field of ["vendor_id", "status"]) if (url.searchParams.get(field)) { clauses.push(`${field}=?`); values.push(url.searchParams.get(field)); }
+    const actor = await userFor(request, env);
+    if (actor?.role === "admin") {
+      for (const field of ["vendor_id", "status"]) if (url.searchParams.get(field)) { clauses.push(`${field}=?`); values.push(url.searchParams.get(field)); }
+    } else if (actor?.role === "vendor") {
+      clauses.push("vendor_id=?"); values.push(actor.vendor_id);
+      if (url.searchParams.get("status")) { clauses.push("status=?"); values.push(url.searchParams.get("status")); }
+    } else {
+      clauses.push("status='live'", "verified=1");
+    }
     const query = url.searchParams.get("q");
     if (query) { clauses.push("(name LIKE ? OR type LIKE ? OR description LIKE ?)"); values.push(`%${query}%`, `%${query}%`, `%${query}%`); }
     const result = await env.DB.prepare(`SELECT * FROM yachts${clauses.length ? ` WHERE ${clauses.join(" AND ")}` : ""} ORDER BY verified DESC,rating DESC,id DESC`).bind(...values).all<DbRow>();
@@ -225,11 +331,13 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
     const start = url.searchParams.get("start"), end = url.searchParams.get("end");
     if (Boolean(start) !== Boolean(end)) throw new HttpError("start and end must be provided together");
     if (start && end && !validDates(start, end)) throw new HttpError("Valid start and end dates are required");
-    const guests = Math.max(1, Number(url.searchParams.get("guests") || 1));
+    const guestsRaw = Number(url.searchParams.get("guests") || 1);
+    if (!Number.isInteger(guestsRaw) || guestsRaw < 1 || guestsRaw > 200) throw new HttpError("guests is invalid");
+    const guests = guestsRaw;
     const yachtType = (url.searchParams.get("type") || "").toLowerCase();
     const experience = (url.searchParams.get("experience") || "").toLowerCase();
-    const durationMin = Math.max(0, Number(url.searchParams.get("duration_min") || 0));
-    const durationMax = Math.max(0, Number(url.searchParams.get("duration_max") || 0));
+    const durationMin = Number(url.searchParams.get("duration_min") || 0), durationMax = Number(url.searchParams.get("duration_max") || 0);
+    if (![durationMin, durationMax].every((value) => Number.isInteger(value) && value >= 0 && value <= 365)) throw new HttpError("duration is invalid");
     const output: DbRow[] = [];
     for (const yacht of yachts) {
       if (yachtType && String(yacht.type || "").toLowerCase() !== yachtType) continue;
@@ -257,6 +365,8 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
   if (yachtMatch) {
     const yacht = row(await env.DB.prepare("SELECT * FROM yachts WHERE id=?").bind(yachtMatch[1]).first<DbRow>());
     if (!yacht) throw new HttpError("Not found", 404);
+    const actor = await userFor(request, env);
+    if (!(yacht.status === "live" && yacht.verified) && !(actor?.role === "admin" || (actor?.role === "vendor" && actor.vendor_id === yacht.vendor_id))) throw new HttpError("Not found", 404);
     const month = url.searchParams.get("month");
     if (month && !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) throw new HttpError("month must use YYYY-MM");
     const allDepartures = await departuresFor(env, yachtMatch[1], true);
@@ -274,7 +384,7 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
   const availabilityMatch = path.match(/^\/api\/yachts\/(\d+)\/availability$/);
   if (availabilityMatch) {
     const start = url.searchParams.get("start"), end = url.searchParams.get("end");
-    if (!start || !end) throw new HttpError("start and end are required");
+    if (!start || !end || !validDates(start, end) || start < now().slice(0, 10)) throw new HttpError("Valid future start and end dates are required");
     return json({ available: !(await overlap(env, availabilityMatch[1], start, end)) });
   }
   if (path === "/api/bookings") {
@@ -305,7 +415,7 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
     const booking = row(await env.DB.prepare("SELECT b.*,y.name yacht_name,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?").bind(bookingMatch[1]).first<DbRow>());
     if (!booking) throw new HttpError("Not found", 404);
     if (actor.role === "vendor" && actor.vendor_id !== booking.vendor_id) throw new HttpError("Forbidden", 403);
-    booking.payments = rows(await env.DB.prepare("SELECT * FROM payments WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>());
+    booking.payments = (await env.DB.prepare("SELECT * FROM payments WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>()).results.map(safePayment);
     booking.refunds = rows(await env.DB.prepare("SELECT * FROM refunds WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>());
     return json(booking);
   }
@@ -314,13 +424,15 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
     let sql = "SELECT p.*,b.guest_name,y.name yacht_name,y.vendor_id FROM payments p JOIN bookings b ON b.id=p.booking_id JOIN yachts y ON y.id=b.yacht_id";
     const values: unknown[] = [];
     if (actor.role === "vendor") { sql += " WHERE y.vendor_id=?"; values.push(actor.vendor_id); }
-    return json(rows(await env.DB.prepare(`${sql} ORDER BY p.id DESC`).bind(...values).all<DbRow>()));
+    return json((await env.DB.prepare(`${sql} ORDER BY p.id DESC`).bind(...values).all<DbRow>()).results.map(safePayment));
   }
   const paymentMatch = path.match(/^\/api\/payments\/(\d+)$/);
   if (paymentMatch) {
-    const payment = row(await env.DB.prepare("SELECT * FROM payments WHERE id=?").bind(paymentMatch[1]).first<DbRow>());
-    if (payment) delete payment.raw_response;
-    return payment ? json(payment) : json({ error: "Not found" }, 404);
+    const payment = await requirePaymentAccess(request, env, paymentMatch[1]);
+    const actor = await userFor(request, env);
+    if (!(actor?.role === "admin" || actor?.role === "vendor")) for (const key of ["booking_id", "commission_rate", "commission_amount", "operator_net_amount", "payout_status"]) delete payment[key];
+    delete payment.raw_response; delete payment.access_token_hash; delete payment.idempotency_key; delete payment.vendor_id;
+    return json(payment);
   }
   if (path === "/api/payment/config") return json({ provider: "bml", mode: env.BML_MODE, environment: env.BML_ENV, currency: env.BML_CURRENCY, live_configured: false });
   if (path === "/api/admin/settings") {
@@ -329,8 +441,9 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
     return json(Object.fromEntries(found.results.map((item) => [item.key, item.value])));
   }
   if (path === "/api/enquiries") {
-    await requireRole(request, env, ["vendor", "admin"]);
-    return json(rows(await env.DB.prepare("SELECT e.*,y.name yacht_name,y.vendor_id FROM enquiries e JOIN yachts y ON y.id=e.yacht_id ORDER BY e.id DESC").all<DbRow>()));
+    const actor = await requireRole(request, env, ["vendor", "admin"]);
+    const query = "SELECT e.*,y.name yacht_name,y.vendor_id FROM enquiries e JOIN yachts y ON y.id=e.yacht_id";
+    return json(rows(actor.role === "vendor" ? await env.DB.prepare(`${query} WHERE y.vendor_id=? ORDER BY e.id DESC`).bind(actor.vendor_id).all<DbRow>() : await env.DB.prepare(`${query} ORDER BY e.id DESC`).all<DbRow>()));
   }
   if (path === "/api/admin/stats") {
     await requireRole(request, env, ["admin"]);
@@ -366,7 +479,7 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
 
 async function syncBooking(env: Env, bookingId: unknown): Promise<void> {
   const paid = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) value FROM payments WHERE booking_id=? AND status='paid'").bind(bookingId).first<{ value: number }>();
-  const refunded = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) value FROM refunds WHERE booking_id=? AND status IN ('recorded','processed')").bind(bookingId).first<{ value: number }>();
+  const refunded = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) value FROM refunds WHERE booking_id=? AND status='processed'").bind(bookingId).first<{ value: number }>();
   const booking = await env.DB.prepare("SELECT total_amount FROM bookings WHERE id=?").bind(bookingId).first<{ total_amount: number }>();
   if (!booking) return;
   const net = Math.max(0, Number(paid?.value || 0) - Number(refunded?.value || 0));
@@ -390,65 +503,111 @@ async function markPayment(env: Env, paymentId: unknown, status: string, actor: 
 async function postApi(request: Request, env: Env, url: URL): Promise<Response> {
   const data = await body(request), path = url.pathname, timestamp = now();
   if (path === "/api/auth/login") {
-    const email = String(data.email || "").trim().toLowerCase(), password = String(data.password || "");
+    const email = emailField(data), password = textField(data, "password", 256, true);
+    const rateLimitKey = await enforceLoginRateLimit(request, env, email);
     const found = row(await env.DB.prepare("SELECT * FROM users WHERE lower(email)=lower(?) AND active=1").bind(email).first<DbRow>());
-    if (!found || !(await passwordMatches(password, String(found.password_hash)))) throw new HttpError("Invalid email or password", 401);
-    const session = await issueSession(env, Number(found.id));
-    await env.DB.prepare("UPDATE users SET last_login_at=? WHERE id=?").bind(timestamp, found.id).run();
-    await audit(env, found, "login", "user", found.id);
-    delete found.password_hash; return json({ ...session, user: found });
+    const matches = await passwordMatches(password, String(found?.password_hash || "100000$pT7jaBpdCzOUZE210qbCAg==$aq5erft4qjlvrmhF/6ZhWsD+VJQ9VEOacr752DVlPE8="));
+    if (!found || !matches) throw new HttpError("Invalid email or password", 401);
+    const session = await newSession(env);
+    await env.DB.batch([
+      env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)").bind(session.tokenHash, found.id, session.expires_at, timestamp),
+      env.DB.prepare("UPDATE users SET last_login_at=? WHERE id=?").bind(timestamp, found.id),
+      env.DB.prepare("DELETE FROM sessions WHERE expires_at<=?").bind(timestamp),
+      env.DB.prepare("DELETE FROM login_rate_limits WHERE key_hash=?").bind(rateLimitKey),
+      env.DB.prepare("DELETE FROM login_rate_limits WHERE window_started<?").bind(Date.now() - 3_600_000),
+      env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) VALUES(?,?,?,?,?,?,?)").bind(found.id, found.role, "login", "user", String(found.id), "{}", timestamp)
+    ]);
+    delete found.password_hash;
+    return Response.json({ expires_at: session.expires_at, user: found }, { headers: { ...JSON_HEADERS, "set-cookie": `atolle_session=${session.token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.max(1, Math.floor((Date.parse(session.expires_at) - Date.now()) / 1000))}` } });
   }
   if (path === "/api/auth/logout") {
     const header = request.headers.get("authorization") || "";
-    if (header.toLowerCase().startsWith("bearer ")) await env.DB.prepare("DELETE FROM sessions WHERE token_hash=?").bind(await sha256(header.slice(7).trim())).run();
-    return json({ ok: true });
+    const cookieToken = (request.headers.get("cookie") || "").split(";").map((item) => item.trim()).find((item) => item.startsWith("atolle_session="))?.slice("atolle_session=".length) || "";
+    const token = header.toLowerCase().startsWith("bearer ") ? header.slice(7).trim() : cookieToken;
+    if (token) await env.DB.prepare("DELETE FROM sessions WHERE token_hash=?").bind(await sha256(token)).run();
+    return Response.json({ ok: true }, { headers: { ...JSON_HEADERS, "set-cookie": "atolle_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0" } });
   }
   if (path === "/api/bookings/quote") return json(quoteResponse(await bookingSelection(env, data)));
   if (path === "/api/bookings") {
+    const idempotencyToken = requestToken(request, "idempotency-key");
+    if (idempotencyToken.length < 16 || idempotencyToken.length > 128) throw new HttpError("A valid Idempotency-Key header is required");
+    const idempotencyKey = await sha256(idempotencyToken);
+    const prior = row(await env.DB.prepare("SELECT * FROM bookings WHERE idempotency_key=?").bind(idempotencyKey).first<DbRow>());
+    if (prior) return json({ id: prior.id, booking_ref: prior.booking_ref, status: prior.status, total_amount: prior.total_amount, deposit_percent: prior.deposit_percent, deposit_amount: prior.deposit_amount, balance_due: prior.balance_due, currency: prior.currency, hold_expires_at: prior.expires_at, booking_token: idempotencyToken }, 200);
     const selection = await bookingSelection(env, data);
     const { yacht, departureId, mode, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, currency } = selection;
-    const refBytes = crypto.getRandomValues(new Uint8Array(3));
+    const guestName = textField(data, "guest_name", 120, true), email = emailField(data);
+    const phone = textField(data, "phone", 40) || null, notes = textField(data, "notes", 2_000) || null;
+    const refBytes = crypto.getRandomValues(new Uint8Array(8));
     const ref = `ATL-${timestamp.slice(2, 10).replaceAll("-", "")}-${hex(refBytes.buffer).toUpperCase()}`;
     const expires = new Date(Date.now() + Number(await setting(env, "hold_minutes", "30")) * 60_000).toISOString();
-    const insert = await env.DB.prepare(`INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?)`).bind(ref, yacht.id, departureId, mode, data.guest_name, data.email, data.phone || null, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, total, currency, data.notes || null, expires, timestamp, timestamp).run();
-    const bookingId = insert.meta.last_row_id;
-    await env.DB.batch([
-      env.DB.prepare("INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,?, 'active',?)").bind(bookingId, yacht.id, departureId, start, end, mode === "shared" ? guests : 1, cabinsBooked, expires, timestamp),
-      env.DB.prepare("INSERT INTO notifications(vendor_id,booking_id,channel,subject,body,status,created_at) VALUES(?,?, 'in_app','New booking request',?, 'queued',?)").bind(yacht.vendor_id, bookingId, `New ${mode} booking request ${ref} for ${yacht.name}.`, timestamp)
-    ]);
-    await audit(env, await userFor(request, env), "create", "booking", bookingId, { ref, total });
-    return json({ id: bookingId, booking_ref: ref, status: "pending_operator", total_amount: total, deposit_percent: depositPercent, deposit_amount: deposit, balance_due: total, currency, hold_expires_at: expires }, 201);
+    const actor = await userFor(request, env);
+    try {
+      await env.DB.batch([
+        env.DB.prepare(`INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at,access_token_hash,idempotency_key)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?, ?,?,?)`).bind(ref, yacht.id, departureId, mode, guestName, email, phone, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, total, currency, notes, expires, timestamp, timestamp, idempotencyKey, idempotencyKey),
+        env.DB.prepare("INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) SELECT id,?,?,?,?,?,?,?,'active',? FROM bookings WHERE booking_ref=?").bind(yacht.id, departureId, start, end, mode === "shared" ? guests : 1, cabinsBooked, expires, timestamp, ref),
+        env.DB.prepare("INSERT INTO notifications(vendor_id,booking_id,channel,subject,body,status,created_at,sent_at) SELECT ?,id,'in_app','New booking request',?,'sent',?,? FROM bookings WHERE booking_ref=?").bind(yacht.vendor_id, `New ${mode} booking request ${ref} for ${yacht.name}.`, timestamp, timestamp, ref),
+        env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) SELECT ?,?,'create','booking',CAST(id AS TEXT),?,? FROM bookings WHERE booking_ref=?").bind(actor?.id || null, actor?.role || "guest", JSON.stringify({ ref, total }), timestamp, ref)
+      ]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (/inventory unavailable|UNIQUE constraint/i.test(message)) throw new HttpError("This inventory was just reserved by another guest", 409);
+      throw error;
+    }
+    const created = await env.DB.prepare("SELECT id FROM bookings WHERE booking_ref=?").bind(ref).first<{ id: number }>();
+    const bookingId = created?.id;
+    return json({ id: bookingId, booking_ref: ref, status: "pending_operator", total_amount: total, deposit_percent: depositPercent, deposit_amount: deposit, balance_due: total, currency, hold_expires_at: expires, booking_token: idempotencyToken }, 201);
   }
   if (path === "/api/payments/create") {
-    const booking = row(await env.DB.prepare("SELECT * FROM bookings WHERE id=?").bind(data.booking_id).first<DbRow>());
+    const idempotencyToken = requestToken(request, "idempotency-key");
+    if (idempotencyToken.length < 16 || idempotencyToken.length > 128) throw new HttpError("A valid Idempotency-Key header is required");
+    const idempotencyKey = await sha256(idempotencyToken);
+    const existing = row(await env.DB.prepare("SELECT * FROM payments WHERE idempotency_key=?").bind(idempotencyKey).first<DbRow>());
+    if (existing) return json({ payment_id: existing.id, checkout_url: `${existing.checkout_url}&payment_id=${existing.id}&payment_token=${encodeURIComponent(idempotencyToken)}`, provider_reference: existing.provider_reference, status: existing.status, gross_amount: existing.amount }, 200);
+    const booking = row(await env.DB.prepare("SELECT b.*,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?").bind(data.booking_id).first<DbRow>());
     if (!booking) throw new HttpError("Booking not found", 404);
+    if (!(await canAccessBooking(request, env, booking))) throw new HttpError("Booking not found", 404);
     if (["declined", "cancelled", "completed"].includes(String(booking.status))) throw new HttpError("Booking is not payable", 409);
+    if (booking.status !== "confirmed" && String(booking.expires_at || "") <= timestamp) throw new HttpError("The availability hold has expired", 409);
     await syncBooking(env, booking.id);
     const current = row(await env.DB.prepare("SELECT * FROM bookings WHERE id=?").bind(booking.id).first<DbRow>()) as DbRow;
-    const type = ["deposit", "balance", "full"].includes(String(data.payment_type)) ? String(data.payment_type) : Number(current.deposit_amount) < Number(current.total_amount) ? "deposit" : "full";
+    const type = enumField(data, "payment_type", ["deposit", "balance", "full"], Number(current.deposit_amount) < Number(current.total_amount) ? "deposit" : "full");
     const amount = type === "deposit" ? round(Math.max(0, Number(current.deposit_amount) - Number(current.amount_paid))) : round(Number(current.balance_due));
     if (amount <= 0) throw new HttpError("No payment is currently due", 409);
     const rate = Math.max(0, Math.min(100, Number(await setting(env, "commission_rate", "30")))), commission = round(amount * rate / 100), net = round(amount - commission);
-    const insert = await env.DB.prepare(`INSERT INTO payments(booking_id,provider,payment_type,amount,currency,commission_rate,commission_amount,operator_net_amount,payout_status,status,created_at,updated_at)
-      VALUES(?,'bml',?,?,?,?,?,?,'pending','created',?,?)`).bind(booking.id, type, amount, booking.currency, rate, commission, net, timestamp, timestamp).run();
-    const paymentId = insert.meta.last_row_id;
-    const bytes = crypto.getRandomValues(new Uint8Array(16)), demoToken = hex(bytes.buffer);
-    const providerRef = `BML-DEMO-${demoToken.slice(0, 10).toUpperCase()}`, checkout = `/payment-return.html?payment_id=${paymentId}&demo=1&demo_token=${demoToken}`;
-    await env.DB.prepare("UPDATE payments SET provider_reference=?,checkout_url=?,status='pending',raw_response=?,updated_at=? WHERE id=?").bind(providerRef, checkout, JSON.stringify({ mode: "mock", reference: providerRef, demo_token_hash: await sha256(demoToken) }), now(), paymentId).run();
-    await audit(env, await userFor(request, env), "create", "payment", paymentId, { amount, commission_rate: rate });
-    return json({ payment_id: paymentId, checkout_url: checkout, provider_reference: providerRef, status: "pending", gross_amount: amount, commission_rate: rate, commission_amount: commission, operator_net_amount: net }, 201);
+    const providerRef = `BML-DEMO-${hex(crypto.getRandomValues(new Uint8Array(10)).buffer).toUpperCase()}`;
+    const checkoutBase = `/payment-return.html?demo=1`, actor = await userFor(request, env);
+    try {
+      await env.DB.batch([
+        env.DB.prepare(`INSERT INTO payments(booking_id,provider,payment_type,amount,currency,commission_rate,commission_amount,operator_net_amount,payout_status,status,provider_reference,checkout_url,raw_response,created_at,updated_at,access_token_hash,idempotency_key)
+          VALUES(?,'bml',?,?,?,?,?,?,'pending','pending',?,?,?, ?,?,?,?)`).bind(booking.id, type, amount, booking.currency, rate, commission, net, providerRef, checkoutBase, JSON.stringify({ mode: "mock", reference: providerRef }), timestamp, timestamp, idempotencyKey, idempotencyKey),
+        env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) VALUES(?,?,'create','payment',NULL,?,?)").bind(actor?.id || null, actor?.role || "guest", JSON.stringify({ amount, commission_rate: rate, provider_reference: providerRef }), timestamp)
+      ]);
+    } catch (error) {
+      if (/UNIQUE constraint/i.test(error instanceof Error ? error.message : String(error))) throw new HttpError("A payment is already pending for this booking", 409);
+      throw error;
+    }
+    const created = await env.DB.prepare("SELECT id FROM payments WHERE idempotency_key=?").bind(idempotencyKey).first<{ id: number }>();
+    const paymentId = created?.id, checkout = `${checkoutBase}&payment_id=${paymentId}&payment_token=${encodeURIComponent(idempotencyToken)}`;
+    return json({ payment_id: paymentId, checkout_url: checkout, provider_reference: providerRef, status: "pending", gross_amount: amount }, 201);
   }
   if (path === "/api/payments/demo-complete") {
-    const payment = row(await env.DB.prepare("SELECT raw_response FROM payments WHERE id=?").bind(data.payment_id).first<DbRow>());
-    const expected = String((payment?.raw_response as DbRow | undefined)?.demo_token_hash || ""), supplied = await sha256(String(data.demo_token || ""));
-    if (!expected || !constantEqual(expected, supplied)) throw new HttpError("Invalid payment return token", 403);
+    if (env.BML_MODE !== "mock") throw new HttpError("Demo completion is disabled", 403);
+    const payment = await requirePaymentAccess(request, env, data.payment_id);
     const status = ["paid", "failed", "cancelled"].includes(String(data.status)) ? String(data.status) : "paid";
     if (!(await markPayment(env, data.payment_id, status, await userFor(request, env)))) throw new HttpError("Payment not found", 404);
-    return json({ ok: true, status });
+    const current = await env.DB.prepare("SELECT status FROM payments WHERE id=?").bind(payment.id).first<{ status: string }>();
+    return json({ ok: true, status: current?.status });
   }
   if (path === "/api/enquiries") {
-    const insert = await env.DB.prepare("INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,status,created_at) VALUES(?,?,?,?,?,?, 'new',?)").bind(data.yacht_id, data.guest_name, data.email, data.guests || null, data.experience || null, data.message || null, timestamp).run();
+    const yachtId = numberField(data, "yacht_id", { integer: true, minimum: 1, required: true });
+    const yacht = await env.DB.prepare("SELECT 1 FROM yachts WHERE id=? AND status='live' AND verified=1").bind(yachtId).first();
+    if (!yacht) throw new HttpError("Yacht not found", 404);
+    const guestName = textField(data, "guest_name", 120, true), email = emailField(data);
+    const guests = numberField(data, "guests", { integer: true, minimum: 1, maximum: 200 });
+    const experience = textField(data, "experience", 120) || null, message = textField(data, "message", 2_000) || null;
+    const insert = await env.DB.prepare("INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,status,created_at) VALUES(?,?,?,?,?,?, 'new',?)").bind(yachtId, guestName, email, guests, experience, message, timestamp).run();
     return json({ id: insert.meta.last_row_id }, 201);
   }
   if (path === "/api/yachts") {
@@ -456,10 +615,21 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     if (!vendorId) throw new HttpError("vendor_id required");
     const privateEnabled = bool(data.private_enabled), sharedEnabled = bool(data.shared_enabled);
     if (!privateEnabled && !sharedEnabled) throw new HttpError("At least one booking model must be enabled");
-    const slug = String(data.name || "yacht").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const name = textField(data, "name", 120, true), type = textField(data, "type", 80, true);
+    const requestedStatus = enumField(data, "status", ["draft", "live"], "draft"), status = actor.role === "vendor" ? "draft" : requestedStatus;
+    const guests = numberField(data, "guests", { integer: true, minimum: 1, maximum: 200, required: true });
+    const cabins = numberField(data, "cabins", { integer: true, minimum: 1, maximum: 100, required: true });
+    const crew = numberField(data, "crew", { integer: true, minimum: 0, maximum: 100 }) ?? 0;
+    const length = numberField(data, "length_m", { minimum: 0, maximum: 300 }) ?? 0;
+    const privateRate = numberField(data, "private_rate", { minimum: 0, maximum: 10_000_000 });
+    const sharedRate = numberField(data, "shared_rate", { minimum: 0, maximum: 1_000_000 });
+    const description = textField(data, "description", 10_000) || null, image = urlField(data, "image");
+    const amenities = stringList(data, "amenities"), experiences = stringList(data, "experiences");
+    const gallery = stringList(data, "gallery", 100); for (const value of gallery) { try { if (new URL(value).protocol !== "https:") throw new Error(); } catch { throw new HttpError("gallery must contain HTTPS URLs"); } }
+    const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const insert = await env.DB.prepare(`INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, data.name, slug, data.type, data.status || "draft", Number(privateEnabled), Number(sharedEnabled), data.guests, data.cabins, data.crew, data.length_m, data.year_built, data.year_refit, data.description, data.image, data.private_rate, data.shared_rate, JSON.stringify(data.amenities || []), JSON.stringify(data.experiences || []), JSON.stringify(data.gallery || []), timestamp).run();
-    await audit(env, actor, "create", "yacht", insert.meta.last_row_id, { name: data.name }); return json({ id: insert.meta.last_row_id }, 201);
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, name, slug, type, status, Number(privateEnabled), Number(sharedEnabled), guests, cabins, crew, length, numberField(data, "year_built", { integer: true, minimum: 1800, maximum: 2200 }), numberField(data, "year_refit", { integer: true, minimum: 1800, maximum: 2200 }), description, image, privateRate, sharedRate, JSON.stringify(amenities), JSON.stringify(experiences), JSON.stringify(gallery), timestamp).run();
+    await audit(env, actor, "create", "yacht", insert.meta.last_row_id, { name }); return json({ id: insert.meta.last_row_id }, 201);
   }
   const newDeparture = path.match(/^\/api\/yachts\/(\d+)\/departures$/);
   if (newDeparture) {
@@ -473,30 +643,74 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
   }
   if (path === "/api/vendor/documents") {
     const actor = await requireRole(request, env, ["vendor", "admin"]), vendorId = actor.vendor_id || data.vendor_id;
-    const insert = await env.DB.prepare("INSERT INTO vendor_documents(vendor_id,yacht_id,document_type,reference,file_url,status,note,uploaded_at) VALUES(?,?,?,?,?,'pending',?,?)").bind(vendorId, data.yacht_id || null, data.document_type, data.reference || null, data.file_url || null, data.note || null, timestamp).run();
-    await audit(env, actor, "upload_metadata", "vendor_document", insert.meta.last_row_id, { document_type: data.document_type }); return json({ id: insert.meta.last_row_id, status: "pending" }, 201);
+    const yachtId = numberField(data, "yacht_id", { integer: true, minimum: 1 });
+    if (yachtId) {
+      const yacht = await env.DB.prepare("SELECT vendor_id FROM yachts WHERE id=?").bind(yachtId).first<{ vendor_id: number }>();
+      if (!yacht || (actor.role === "vendor" && yacht.vendor_id !== actor.vendor_id)) throw new HttpError("Yacht not found", 404);
+    }
+    const documentType = enumField(data, "document_type", ["Company registration", "Vessel licence", "Insurance", "Safety certificate"]);
+    const reference = textField(data, "reference", 160) || null, fileUrl = urlField(data, "file_url"), note = textField(data, "note", 1_000) || null;
+    if (!reference && !fileUrl) throw new HttpError("A reference or file URL is required");
+    const insert = await env.DB.prepare("INSERT INTO vendor_documents(vendor_id,yacht_id,document_type,reference,file_url,status,note,uploaded_at) VALUES(?,?,?,?,?,'pending',?,?)").bind(vendorId, yachtId, documentType, reference, fileUrl, note, timestamp).run();
+    await audit(env, actor, "upload_metadata", "vendor_document", insert.meta.last_row_id, { document_type: documentType }); return json({ id: insert.meta.last_row_id, status: "pending" }, 201);
+  }
+  const reconcileMatch = path.match(/^\/api\/payments\/(\d+)\/reconcile$/);
+  if (reconcileMatch) {
+    const actor = await requireRole(request, env, ["vendor", "admin"]);
+    const payment = row(await env.DB.prepare("SELECT p.*,y.vendor_id FROM payments p JOIN bookings b ON b.id=p.booking_id JOIN yachts y ON y.id=b.yacht_id WHERE p.id=?").bind(reconcileMatch[1]).first<DbRow>());
+    if (!payment || (actor.role === "vendor" && actor.vendor_id !== payment.vendor_id)) throw new HttpError("Payment not found", 404);
+    if (env.BML_MODE !== "mock") throw new HttpError("Live BML reconciliation is not configured", 501);
+    await syncBooking(env, payment.booking_id); await audit(env, actor, "payment_reconciled", "payment", payment.id, { status: payment.status });
+    return json({ status: payment.status });
   }
   if (path === "/api/refunds") {
     const actor = await requireRole(request, env, ["admin"]), payment = await env.DB.prepare("SELECT * FROM payments WHERE id=? AND status='paid'").bind(data.payment_id).first<DbRow>();
     if (!payment) throw new HttpError("A paid payment is required");
     const prior = await env.DB.prepare("SELECT COALESCE(SUM(amount),0) value FROM refunds WHERE payment_id=? AND status IN ('recorded','processed')").bind(payment.id).first<{ value: number }>();
-    const amount = round(Number(data.amount || 0));
+    const amount = round(numberField(data, "amount", { minimum: .01, maximum: 100_000_000, required: true }) as number);
     if (amount <= 0 || Number(prior?.value || 0) + amount > Number(payment.amount) + .001) throw new HttpError("Invalid refund amount");
     const ratio = amount / Number(payment.amount), commission = round(Number(payment.commission_amount) * ratio), operator = round(Number(payment.operator_net_amount) * ratio);
-    const insert = await env.DB.prepare("INSERT INTO refunds(payment_id,booking_id,amount,commission_reversal,operator_reversal,reason,status,created_at) VALUES(?,?,?,?,?,?,'recorded',?)").bind(payment.id, payment.booking_id, amount, commission, operator, data.reason || null, timestamp).run();
-    await syncBooking(env, payment.booking_id); await audit(env, actor, "refund_recorded", "refund", insert.meta.last_row_id, { amount }); return json({ id: insert.meta.last_row_id, amount, commission_reversal: commission, operator_reversal: operator, status: "recorded" }, 201);
+    const refundStatus = env.BML_MODE === "mock" ? "processed" : "recorded";
+    let insert: D1Result;
+    try { insert = await env.DB.prepare("INSERT INTO refunds(payment_id,booking_id,amount,commission_reversal,operator_reversal,reason,status,created_at,processed_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(payment.id, payment.booking_id, amount, commission, operator, textField(data, "reason", 1_000) || null, refundStatus, timestamp, refundStatus === "processed" ? timestamp : null).run(); }
+    catch (error) { if (/invalid refund total/i.test(error instanceof Error ? error.message : String(error))) throw new HttpError("Refund exceeds the remaining refundable amount", 409); throw error; }
+    await syncBooking(env, payment.booking_id); await audit(env, actor, "refund_recorded", "refund", insert.meta.last_row_id, { amount, status: refundStatus }); return json({ id: insert.meta.last_row_id, amount, commission_reversal: commission, operator_reversal: operator, status: refundStatus }, 201);
   }
   if (path === "/api/admin/payouts") {
-    const actor = await requireRole(request, env, ["admin"]), amount = round(Number(data.amount || 0)); if (amount <= 0) throw new HttpError("amount must be positive");
-    const insert = await env.DB.prepare("INSERT INTO payouts(vendor_id,amount,currency,status,reference,notes,created_at) VALUES(?,?,?,'pending',?,?,?)").bind(data.vendor_id, amount, data.currency || "USD", data.reference || null, data.notes || null, timestamp).run();
-    await audit(env, actor, "payout_created", "payout", insert.meta.last_row_id, { amount }); return json({ id: insert.meta.last_row_id, status: "pending" }, 201);
+    const actor = await requireRole(request, env, ["admin"]), amount = round(numberField(data, "amount", { minimum: .01, maximum: 100_000_000, required: true }) as number);
+    const idempotencyToken = requestToken(request, "idempotency-key"); if (idempotencyToken.length < 16 || idempotencyToken.length > 128) throw new HttpError("A valid Idempotency-Key header is required");
+    const idempotencyKey = await sha256(idempotencyToken), existing = await env.DB.prepare("SELECT id,status FROM payouts WHERE idempotency_key=?").bind(idempotencyKey).first<DbRow>();
+    if (existing) return json(existing, 200);
+    const vendorId = numberField(data, "vendor_id", { integer: true, minimum: 1, required: true });
+    const vendor = await env.DB.prepare("SELECT 1 FROM vendors WHERE id=?").bind(vendorId).first(); if (!vendor) throw new HttpError("Vendor not found", 404);
+    const currency = textField(data, "currency", 3).toUpperCase() || "USD"; if (!/^[A-Z]{3}$/.test(currency)) throw new HttpError("currency is invalid");
+    const eligible = rows(await env.DB.prepare(`SELECT p.id,p.operator_net_amount-
+      COALESCE((SELECT SUM(r.operator_reversal) FROM refunds r WHERE r.payment_id=p.id AND r.status IN ('recorded','processed')),0)-
+      COALESCE((SELECT SUM(pi.amount) FROM payout_items pi JOIN payouts po ON po.id=pi.payout_id WHERE pi.payment_id=p.id AND po.status IN ('pending','paid')),0) available
+      FROM payments p JOIN bookings b ON b.id=p.booking_id JOIN yachts y ON y.id=b.yacht_id
+      WHERE y.vendor_id=? AND p.status='paid' AND p.currency=? ORDER BY p.id`).bind(vendorId, currency).all<DbRow>());
+    let remaining = amount; const allocations: { paymentId: unknown; amount: number }[] = [];
+    for (const payment of eligible) { const allocated = round(Math.min(remaining, Math.max(0, Number(payment.available)))); if (allocated > 0) allocations.push({ paymentId: payment.id, amount: allocated }); remaining = round(remaining - allocated); if (remaining <= 0) break; }
+    if (remaining > .001) throw new HttpError("Payout exceeds the available balance", 409);
+    const statements: D1PreparedStatement[] = [env.DB.prepare("INSERT INTO payouts(vendor_id,amount,currency,status,reference,notes,created_at,idempotency_key) VALUES(?,?,?,'pending',?,?,?,?)").bind(vendorId, amount, currency, textField(data, "reference", 160) || null, textField(data, "notes", 1_000) || null, timestamp, idempotencyKey)];
+    for (const allocation of allocations) statements.push(env.DB.prepare("INSERT INTO payout_items(payout_id,payment_id,amount) SELECT id,?,? FROM payouts WHERE idempotency_key=?").bind(allocation.paymentId, allocation.amount, idempotencyKey));
+    statements.push(env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) SELECT ?,?,'payout_created','payout',CAST(id AS TEXT),?,? FROM payouts WHERE idempotency_key=?").bind(actor.id, actor.role, JSON.stringify({ amount }), timestamp, idempotencyKey));
+    try { await env.DB.batch(statements); }
+    catch (error) { if (/payout exceeds/i.test(error instanceof Error ? error.message : String(error))) throw new HttpError("Payout exceeds the available balance", 409); throw error; }
+    const created = await env.DB.prepare("SELECT id FROM payouts WHERE idempotency_key=?").bind(idempotencyKey).first<{ id: number }>(); return json({ id: created?.id, status: "pending" }, 201);
   }
   throw new HttpError("Unknown endpoint", 404);
 }
 
 function validateDeparture(data: DbRow): void {
   if (!validDates(data.start_date, data.end_date)) throw new HttpError("End date must follow start date");
-  for (const key of ["nights", "cabins_total", "cabins_available", "places_total", "places_available", "price_pp"]) if (Number(data[key]) < 0) throw new HttpError("Duration, inventory, and price must be non-negative");
+  if (String(data.start_date) < now().slice(0, 10)) throw new HttpError("Departure cannot start in the past");
+  const integerFields = ["nights", "cabins_total", "cabins_available", "places_total", "places_available"];
+  for (const key of integerFields) numberField(data, key, { integer: true, minimum: key === "nights" ? 1 : 0, maximum: 10_000, required: true });
+  numberField(data, "price_pp", { minimum: 0, maximum: 1_000_000, required: true });
+  if (Number(data.nights) !== dateNights(String(data.start_date), String(data.end_date))) throw new HttpError("nights must match the departure dates");
+  enumField(data, "status", ["open", "closed"], "open");
+  textField(data, "title", 160, true);
   if (Number(data.cabins_available) > Number(data.cabins_total)) throw new HttpError("Available cabins cannot exceed total cabins");
   if (Number(data.places_available) > Number(data.places_total)) throw new HttpError("Available places cannot exceed total places");
 }
@@ -507,8 +721,9 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     const actor = await requireRole(request, env, ["admin"]), ranges: Record<string, [number, number] | null> = { commission_rate: [0, 100], deposit_percent: [0, 100], hold_minutes: [5, 1440], currency: null }, changed: DbRow = {};
     const statements: D1PreparedStatement[] = [];
     for (const [key, value] of Object.entries(data)) {
-      if (!(key in ranges)) continue; const range = ranges[key];
+      if (!(key in ranges)) throw new HttpError(`Unknown setting: ${key}`); const range = ranges[key];
       if (range && (!Number.isFinite(Number(value)) || Number(value) < range[0] || Number(value) > range[1])) throw new HttpError(`${key} out of range`);
+      if (key === "currency" && !/^[A-Z]{3}$/.test(String(value))) throw new HttpError("currency must be a three-letter uppercase code");
       changed[key] = value; statements.push(env.DB.prepare("INSERT INTO platform_settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(key, String(value), timestamp));
     }
     if (statements.length) await env.DB.batch(statements); await audit(env, actor, "settings_update", "platform_settings", null, changed); return json({ ok: true, ...changed });
@@ -520,11 +735,17 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     [/^\/api\/admin\/yachts\/(\d+)$/, ["admin"], "UPDATE yachts SET verified=?,verification_note=?,status=COALESCE(?,status),updated_at=? WHERE id=?", "yacht_verification"]
   ] as const) {
     const match = path.match(pattern); if (!match) continue; const actor = await requireRole(request, env, [...roles]);
+    if (action === "vendor_verification") enumField(data, "status", ["pending", "verified", "suspended"], bool(data.verified) ? "verified" : "pending");
+    if (action === "document_review") enumField(data, "status", ["pending", "approved", "rejected"], "approved");
+    if (action === "payout_status") enumField(data, "status", ["pending", "paid", "cancelled"], "paid");
+    if (action === "yacht_verification" && data.status != null) enumField(data, "status", ["draft", "live"]);
     const values = action === "vendor_verification" ? [Number(bool(data.verified)), data.status || (bool(data.verified) ? "verified" : "pending"), timestamp, match[1]]
       : action === "document_review" ? [data.status || "approved", data.note || null, timestamp, actor.id, match[1]]
       : action === "payout_status" ? [data.status || "paid", data.reference || null, (data.status || "paid") === "paid" ? timestamp : null, match[1]]
       : [Number(bool(data.verified)), data.verification_note || null, data.status || null, timestamp, match[1]];
-    await env.DB.prepare(sql).bind(...values).run(); await audit(env, actor, action, action.split("_")[0], match[1], data); return json({ ok: true });
+    const result = await env.DB.prepare(sql).bind(...values).run(); if (!result.meta.changes) throw new HttpError("Not found", 404);
+    if (action === "payout_status") await env.DB.prepare("UPDATE payments SET payout_status=? WHERE id IN (SELECT payment_id FROM payout_items WHERE payout_id=?)").bind((data.status || "paid") === "paid" ? "paid" : "pending", match[1]).run();
+    await audit(env, actor, action, action.split("_")[0], match[1], data); return json({ ok: true });
   }
   const yachtMatch = path.match(/^\/api\/yachts\/(\d+)$/);
   if (yachtMatch) {
@@ -532,6 +753,20 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     if (!yacht) throw new HttpError("Not found", 404); if (actor.role === "vendor" && yacht.vendor_id !== actor.vendor_id) throw new HttpError("Forbidden", 403);
     const privateEnabled = "private_enabled" in data ? bool(data.private_enabled) : bool(yacht.private_enabled), sharedEnabled = "shared_enabled" in data ? bool(data.shared_enabled) : bool(yacht.shared_enabled);
     if (!privateEnabled && !sharedEnabled) throw new HttpError("At least one booking model must be enabled");
+    if ("name" in data) data.name = textField(data, "name", 120, true);
+    if ("type" in data) data.type = textField(data, "type", 80, true);
+    if ("status" in data) {
+      data.status = enumField(data, "status", ["draft", "live"]);
+      if (actor.role === "vendor" && data.status === "live" && !yacht.verified) throw new HttpError("The listing must be verified before it can go live", 403);
+    }
+    for (const field of ["guests", "cabins", "crew"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: field === "guests" || field === "cabins" ? 1 : 0, maximum: 200, required: true });
+    for (const field of ["year_built", "year_refit"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: 1800, maximum: 2200 });
+    if ("length_m" in data) data.length_m = numberField(data, "length_m", { minimum: 0, maximum: 300, required: true });
+    for (const field of ["private_rate", "shared_rate"]) if (field in data) data[field] = numberField(data, field, { minimum: 0, maximum: 10_000_000 });
+    if ("description" in data) data.description = textField(data, "description", 10_000);
+    if ("image" in data) data.image = urlField(data, "image");
+    for (const field of ["amenities", "experiences"]) if (field in data) data[field] = stringList(data, field);
+    if ("gallery" in data) { const gallery = stringList(data, "gallery", 100); for (const value of gallery) { try { if (new URL(value).protocol !== "https:") throw new Error(); } catch { throw new HttpError("gallery must contain HTTPS URLs"); } } data.gallery = gallery; }
     const allowed = ["name", "type", "status", "private_enabled", "shared_enabled", "guests", "cabins", "crew", "length_m", "year_built", "year_refit", "description", "image", "private_rate", "shared_rate"];
     const sets: string[] = [], values: unknown[] = [];
     for (const field of allowed) if (field in data) { sets.push(`${field}=?`); values.push(field === "private_enabled" ? Number(privateEnabled) : field === "shared_enabled" ? Number(sharedEnabled) : data[field]); }
@@ -544,6 +779,8 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     const actor = await requireRole(request, env, ["vendor", "admin"]), current = row(await env.DB.prepare("SELECT d.*,y.vendor_id,y.shared_enabled FROM departures d JOIN yachts y ON y.id=d.yacht_id WHERE d.id=?").bind(departureMatch[1]).first<DbRow>());
     if (!current) throw new HttpError("Departure not found", 404); if (actor.role === "vendor" && current.vendor_id !== actor.vendor_id) throw new HttpError("Forbidden", 403);
     const merged = { ...current, ...data }; validateDeparture(merged);
+    const reserved = await env.DB.prepare("SELECT COALESCE(SUM(units),0) places,COALESCE(SUM(cabin_units),0) cabins FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?").bind(departureMatch[1], timestamp).first<DbRow>();
+    if (Number(merged.places_available) < Number(reserved?.places || 0) || Number(merged.cabins_available) < Number(reserved?.cabins || 0)) throw new HttpError("Inventory cannot be reduced below active reservations", 409);
     await env.DB.prepare("UPDATE departures SET title=?,start_date=?,end_date=?,nights=?,cabins_total=?,cabins_available=?,places_total=?,places_available=?,price_pp=?,status=? WHERE id=?").bind(merged.title, merged.start_date, merged.end_date, merged.nights, merged.cabins_total, merged.cabins_available, merged.places_total, merged.places_available, merged.price_pp, merged.status || "open", departureMatch[1]).run();
     await audit(env, actor, "update", "departure", departureMatch[1], { fields: Object.keys(data) }); return json({ ok: true });
   }
@@ -551,10 +788,26 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
   if (bookingMatch) {
     const actor = await requireRole(request, env, ["vendor", "admin"]), booking = await env.DB.prepare("SELECT b.*,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?").bind(bookingMatch[1]).first<DbRow>();
     if (!booking) throw new HttpError("Not found", 404); if (actor.role === "vendor" && booking.vendor_id !== actor.vendor_id) throw new HttpError("Forbidden", 403);
-    const status = String(data.status || ""); if (!["approved", "declined", "cancelled", "confirmed", "completed", "awaiting_payment"].includes(status)) throw new HttpError("Invalid booking status");
-    await env.DB.prepare("UPDATE bookings SET status=?,updated_at=? WHERE id=?").bind(status, timestamp, bookingMatch[1]).run();
-    if (["declined", "cancelled", "completed"].includes(status)) await env.DB.prepare("UPDATE availability_holds SET status='released' WHERE booking_id=?").bind(bookingMatch[1]).run();
-    await audit(env, actor, "booking_status", "booking", bookingMatch[1], { status }); return json({ ok: true, status });
+    const status = enumField(data, "status", ["approved", "declined", "cancelled", "confirmed", "completed", "awaiting_payment"]);
+    const transitions: Record<string, string[]> = {
+      pending_operator: ["approved", "confirmed", "declined", "cancelled"], approved: ["awaiting_payment", "confirmed", "declined", "cancelled"],
+      awaiting_payment: ["confirmed", "cancelled"], confirmed: ["completed", "cancelled"], completed: [], declined: [], cancelled: []
+    };
+    if (!(transitions[String(booking.status)] || []).includes(status)) throw new HttpError(`Cannot change a ${booking.status} booking to ${status}`, 409);
+    const extending = ["approved", "awaiting_payment"].includes(status);
+    if (extending) {
+      const hold = await env.DB.prepare("SELECT 1 FROM availability_holds WHERE booking_id=? AND status='active' AND expires_at>?").bind(bookingMatch[1], timestamp).first();
+      if (!hold) throw new HttpError("The availability hold has expired", 409);
+    }
+    const expires = new Date(Date.now() + Number(await setting(env, "hold_minutes", "30")) * 60_000).toISOString();
+    const statements: D1PreparedStatement[] = [
+      env.DB.prepare("UPDATE bookings SET status=?,expires_at=CASE WHEN ? THEN ? ELSE expires_at END,updated_at=? WHERE id=?").bind(status, Number(extending), expires, timestamp, bookingMatch[1]),
+      env.DB.prepare("INSERT INTO notifications(vendor_id,booking_id,channel,subject,body,status,created_at,sent_at) VALUES(?,?, 'in_app','Booking update',?,'sent',?,?)").bind(booking.vendor_id, bookingMatch[1], `Booking ${booking.booking_ref} is now ${status}.`, timestamp, timestamp),
+      env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) VALUES(?,?,'booking_status','booking',?,?,?)").bind(actor.id, actor.role, bookingMatch[1], JSON.stringify({ status }), timestamp)
+    ];
+    if (["declined", "cancelled", "completed"].includes(status)) statements.push(env.DB.prepare("UPDATE availability_holds SET status='released' WHERE booking_id=?").bind(bookingMatch[1]));
+    else if (extending) statements.push(env.DB.prepare("UPDATE availability_holds SET expires_at=? WHERE booking_id=? AND status='active'").bind(expires, bookingMatch[1]));
+    await env.DB.batch(statements); return json({ ok: true, status });
   }
   throw new HttpError("Unknown endpoint", 404);
 }
@@ -565,7 +818,7 @@ async function api(request: Request, env: Env): Promise<Response> {
     if (request.method === "GET") return await getApi(request, env, url);
     if (request.method === "POST") return await postApi(request, env, url);
     if (request.method === "PUT") return await putApi(request, env, url);
-    return json({ error: "Method not allowed" }, 405);
+    return Response.json({ error: "Method not allowed" }, { status: 405, headers: { ...JSON_HEADERS, allow: "GET, POST, PUT" } });
   } catch (error) {
     if (error instanceof HttpError) return json({ error: error.message }, error.status);
     console.error(JSON.stringify({ level: "error", path: url.pathname, error: error instanceof Error ? error.stack : String(error) }));
@@ -580,7 +833,9 @@ export default {
     const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
     headers.set("x-content-type-options", "nosniff"); headers.set("x-frame-options", "DENY");
-    headers.set("referrer-policy", "strict-origin-when-cross-origin");
+    headers.set("referrer-policy", "strict-origin-when-cross-origin"); headers.set("permissions-policy", "camera=(), microphone=(), geolocation=()");
+    headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
+    headers.set("content-security-policy", JSON_HEADERS["content-security-policy"]);
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
   }
 } satisfies ExportedHandler<Env>;

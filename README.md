@@ -169,13 +169,13 @@ See **[PRODUCTION-READINESS.md](PRODUCTION-READINESS.md)** for the detailed laun
 
 The backend has been expanded beyond the original MVP. The current codebase now includes:
 
-- PBKDF2 password hashing, bearer sessions, session expiry, guest registration and role-aware access controls
+- PBKDF2 password hashing, HttpOnly/Secure/SameSite session cookies, session expiry and role-aware access controls
 - optional `ENFORCE_AUTH=1` production mode while preserving local demo mode
 - vendor ownership checks and separate admin/vendor/customer roles
 - operator/KYC document metadata and admin review states
 - server-side booking price calculation (the browser no longer controls the payable amount)
-- private-yacht date conflict checking and temporary availability holds
-- shared-departure inventory holds
+- transaction-protected private-yacht and shared-departure inventory holds
+- capability tokens and idempotency keys for guest bookings and payments
 - configurable booking deposit percentage and remaining-balance accounting
 - payment types: deposit, balance and full payment
 - BML transaction creation plus authoritative transaction lookup/reconciliation hook
@@ -184,9 +184,9 @@ The backend has been expanded beyond the original MVP. The current codebase now 
 - refund adjustment ledger with proportional commission/operator reversals
 - operator available-balance calculation and payout records
 - admin payout creation and paid-status workflow
-- notifications queue for booking lifecycle events
+- in-app booking lifecycle notifications
 - immutable-style audit trail for privileged and financial actions
-- security headers, basic API throttling and no-store API responses
+- CSP/HSTS security headers, bounded request bodies, login throttling and no-store API responses
 - automated smoke test covering login, booking, deposit, mock BML payment, 30% commission and operator ledger
 - Cloudflare D1 migration starter and `wrangler.toml.example`
 
@@ -194,6 +194,12 @@ Run the smoke test with:
 
 ```bash
 python3 tests/smoke.py
+```
+
+The Worker integration suite expects a local Wrangler Worker initialized with all migrations and `tests/worker-fixture.sql`, then runs with:
+
+```bash
+npm run test:worker
 ```
 
 ### Demo credentials
