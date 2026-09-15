@@ -7,9 +7,13 @@
     "check:assets": "node scripts/check-static-assets.mjs",
     "types": "wrangler types --env staging",
     "dev": "npm run build && wrangler dev --env staging",
-    "test:worker": "node tests/worker-smoke.mjs",
+    "test:legacy": "python3 tests/smoke.py",
+    "test:worker": "node tests/run-worker-smoke.mjs",
+    "test:worker:probe": "node tests/worker-smoke.mjs",
+    "test:staging": "node tests/staging-smoke.mjs",
     "deploy:staging": "npm run build && wrangler deploy --env staging",
-    "check": "npm run types && npx tsc && npm run build && npm run check:assets && wrangler deploy --env staging --dry-run && wrangler check startup --env staging"
+    "check": "npm run types && npx tsc && npm run build && npm run check:assets && wrangler deploy --env staging --dry-run && wrangler check startup --env staging",
+    "ci": "npm run check && npm run test:legacy && npm run test:worker"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "latest",

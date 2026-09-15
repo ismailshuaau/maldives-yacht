@@ -68,6 +68,30 @@ npx wrangler d1 execute DB --env staging --remote --file cloudflare/staging/enab
 npm run deploy:staging
 ```
 
+### Automatic staging deployment
+
+GitHub Actions runs the complete verification suite for every pull request to `main`. A successful push or merge to `main` then applies pending D1 migrations, deploys the Worker, and runs non-destructive checks against staging. The workflow can also be dispatched manually from `main`.
+
+Configure a GitHub Environment named `staging` with these environment secrets:
+
+- `CLOUDFLARE_ACCOUNT_ID`
+- `CLOUDFLARE_API_TOKEN` — scoped only to this account's Workers deployment and D1 migration access
+- `STAGING_TEST_EMAIL`
+- `STAGING_TEST_PASSWORD`
+
+The staging test identity should be a dedicated active vendor or administrator account. Do not reuse production credentials. The environment must not require reviewer approval if deployments are expected to remain automatic.
+
+Protect `main` by requiring a pull request and the `verify` status check, requiring branches to be up to date, and blocking force pushes and deletion. Reviewer approval is intentionally not required so a solo maintainer can merge after CI passes.
+
+Run the same local verification suite with:
+
+```bash
+npm ci
+npm run ci
+```
+
+Remote database migrations run before the new Worker version. Keep migrations backward-compatible with the currently deployed code. A failed migration or deployment must be repaired with a forward migration/deployment; do not automate database rollback.
+
 Do not promote this staging environment to live payments until the remaining items in `PRODUCTION-READINESS.md` are complete.
 
 ## Production work still required
@@ -196,7 +220,7 @@ Run the smoke test with:
 python3 tests/smoke.py
 ```
 
-The Worker integration suite expects a local Wrangler Worker initialized with all migrations and `tests/worker-fixture.sql`, then runs with:
+The Worker integration suite creates isolated temporary D1 storage, applies all migrations, loads `tests/worker-fixture.sql`, starts Wrangler on an available local port, and cleans up automatically:
 
 ```bash
 npm run test:worker

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 
 const origin = process.env.ATOLLE_TEST_ORIGIN || 'http://127.0.0.1:8787';
+const isoDate = daysFromNow => new Date(Date.now() + daysFromNow * 86_400_000).toISOString().slice(0, 10);
 async function call(path, options = {}) {
   const response = await fetch(origin + path, options);
   let data = {}; try { data = await response.json(); } catch {}
@@ -14,7 +15,7 @@ assert.equal(result.data.length, 1, 'public catalogue should expose only the ver
 result = await call('/api/yachts/1/availability?start=not-a-date&end=also-bad');
 assert.equal(result.response.status, 400);
 
-const booking = { yacht_id: 1, mode: 'private', guests: 2, cabins_booked: 0, start_date: '2027-02-01', end_date: '2027-02-05', guest_name: 'Test Guest', email: 'guest@example.com' };
+const booking = { yacht_id: 1, mode: 'private', guests: 2, cabins_booked: 0, start_date: isoDate(120), end_date: isoDate(124), guest_name: 'Test Guest', email: 'guest@example.com' };
 result = await call('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(booking) });
 assert.equal(result.response.status, 400, 'booking must require idempotency');
 
@@ -57,7 +58,7 @@ result = await call('/api/enquiries', { headers: { Cookie: cookie } });
 assert.equal(result.response.status, 200);
 assert.equal(result.data.length, 1, 'vendor must only see enquiries for its own yachts');
 
-result = await call('/api/yachts/1/departures', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify({ title: 'Unsafe', start_date: '2027-03-01', end_date: '2027-03-03', nights: '<img src=x onerror=alert(1)>', cabins_total: 2, cabins_available: 2, places_total: 4, places_available: 4, price_pp: 100, status: 'open' }) });
+result = await call('/api/yachts/1/departures', { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify({ title: 'Unsafe', start_date: isoDate(150), end_date: isoDate(152), nights: '<img src=x onerror=alert(1)>', cabins_total: 2, cabins_available: 2, places_total: 4, places_available: 4, price_pp: 100, status: 'open' }) });
 assert.equal(result.response.status, 400, 'non-numeric inventory must be rejected');
 
 result = await call(`/api/payments/${paymentId}/reconcile`, { method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: '{}' });
