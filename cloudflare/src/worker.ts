@@ -51,7 +51,7 @@ type DbRow = Record<string, unknown>;
 function row(raw: DbRow | null): DbRow | null {
   if (!raw) return null;
   const item = { ...raw };
-  for (const key of ["amenities_json", "experiences_json", "gallery_json", "detail_json", "raw_response"]) {
+  for (const key of ["amenities_json", "experiences_json", "gallery_json", "matching_departures_json", "detail_json", "raw_response"]) {
     if (!(key in item)) continue;
     try {
       const parsed = JSON.parse(String(item[key] || (key.endsWith("_json") ? "[]" : "{}")));
@@ -197,13 +197,9 @@ async function setting(env: Env, key: string, fallback: string): Promise<string>
   const found = await env.DB.prepare("SELECT value FROM platform_settings WHERE key=?").bind(key).first<{ value: string }>();
   return found?.value ?? fallback;
 }
-async function expireHolds(env: Env): Promise<void> {
-  await env.DB.prepare("UPDATE availability_holds SET status='expired' WHERE status='active' AND expires_at < ?").bind(now()).run();
-}
 async function overlap(env: Env, yachtId: unknown, start: string, end: string): Promise<boolean> {
-  await expireHolds(env);
   return Boolean(await env.DB.prepare(`SELECT 1 present FROM availability_holds WHERE yacht_id=? AND status='active'
-    AND departure_id IS NULL AND date(start_date)<date(?) AND date(end_date)>date(?) LIMIT 1`).bind(yachtId, end, start).first());
+    AND departure_id IS NULL AND expires_at>? AND start_date<? AND end_date>? LIMIT 1`).bind(yachtId, now(), end, start).first());
 }
 async function departure(env: Env, raw: DbRow): Promise<DbRow> {
   const item = row(raw) as DbRow;
@@ -276,7 +272,6 @@ async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection
     if (!yacht.shared_enabled) throw new HttpError("Liveaboard unavailable", 409);
     cabinsBooked = Number(data.cabins_booked);
     if (!Number.isInteger(cabinsBooked) || cabinsBooked < 1 || cabinsBooked > guests) throw new HttpError("Cabins must be between one and the number of guests");
-    await expireHolds(env);
     const raw = await env.DB.prepare("SELECT * FROM departures WHERE id=? AND yacht_id=? AND status='open'").bind(departureId, yacht.id).first<DbRow>();
     if (!raw) throw new HttpError("Liveaboard departure not found", 404);
     departureRow = await departure(env, raw);
@@ -301,7 +296,176 @@ function quoteResponse(selection: BookingSelection): DbRow {
   };
 }
 
-async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
+type SearchParams = {
+  mode: "private" | "shared";
+  start: string | null;
+  end: string | null;
+  guests: number;
+  yachtType: string;
+  experience: string;
+  durationMin: number;
+  durationMax: number;
+  cursor: { rating: number; id: number } | null;
+};
+
+const SEARCH_PAGE_SIZE = 12;
+
+function decodeSearchCursor(value: string | null): SearchParams["cursor"] {
+  if (!value) return null;
+  try {
+    const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+    const [rating, id]: unknown[] = JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")));
+    if (!Number.isFinite(rating) || !Number.isInteger(id) || Number(id) < 1) throw new Error();
+    return { rating: Number(rating), id: Number(id) };
+  } catch { throw new HttpError("cursor is invalid"); }
+}
+
+function encodeSearchCursor(item: DbRow): string {
+  return btoa(JSON.stringify([Number(item.rating_sort || 0), Number(item.id)]))
+    .replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+}
+
+function searchParams(url: URL): SearchParams {
+  const mode = (url.searchParams.get("mode") || "").toLowerCase();
+  if (mode !== "private" && mode !== "shared") throw new HttpError("mode must be private or shared");
+  const start = url.searchParams.get("start"), end = url.searchParams.get("end");
+  if (Boolean(start) !== Boolean(end)) throw new HttpError("start and end must be provided together");
+  if (start && end && !validDates(start, end)) throw new HttpError("Valid start and end dates are required");
+  const guests = Number(url.searchParams.get("guests") || 1);
+  if (!Number.isInteger(guests) || guests < 1 || guests > 200) throw new HttpError("guests is invalid");
+  const durationMin = Number(url.searchParams.get("duration_min") || 0);
+  const durationMax = Number(url.searchParams.get("duration_max") || 0);
+  if (![durationMin, durationMax].every((value) => Number.isInteger(value) && value >= 0 && value <= 365) || (durationMin && durationMax && durationMin > durationMax)) throw new HttpError("duration is invalid");
+  return {
+    mode, start, end, guests,
+    yachtType: (url.searchParams.get("type") || "").trim().toLowerCase(),
+    experience: (url.searchParams.get("experience") || "").trim().toLowerCase(),
+    durationMin, durationMax, cursor: decodeSearchCursor(url.searchParams.get("cursor")),
+  };
+}
+
+function searchQuery(params: SearchParams, timestamp: string): { sql: string; values: unknown[] } {
+  const fields = `y.id,y.name,y.type,y.private_enabled,y.shared_enabled,y.guests,y.cabins,y.length_m,
+    y.description,y.image,y.private_rate,y.shared_rate,y.amenities_json,y.rating,y.reviews,COALESCE(y.rating,0) rating_sort`;
+  const cursorSql = params.cursor ? "WHERE (rating_sort<? OR (rating_sort=? AND id<?))" : "";
+  const cursorValues = params.cursor ? [params.cursor.rating, params.cursor.rating, params.cursor.id] : [];
+  if (params.mode === "private") {
+    const clauses = ["y.status='live'", "y.verified=1", "y.private_enabled=1", "y.guests>=?"];
+    const values: unknown[] = [params.guests];
+    if (params.yachtType) { clauses.push("LOWER(y.type)=?"); values.push(params.yachtType); }
+    if (params.experience) { clauses.push("EXISTS (SELECT 1 FROM json_each(y.experiences_json) e WHERE LOWER(CAST(e.value AS TEXT))=?)"); values.push(params.experience); }
+    if (params.start && params.end) {
+      clauses.push(`NOT EXISTS (SELECT 1 FROM availability_holds h
+        WHERE h.yacht_id=y.id AND h.status='active' AND h.departure_id IS NULL
+          AND h.expires_at>? AND h.start_date<? AND h.end_date>?)`);
+      values.push(timestamp, params.end, params.start);
+    }
+    return {
+      sql: `WITH candidate AS (SELECT ${fields} FROM yachts y WHERE ${clauses.join(" AND ")}),
+        counts AS (SELECT COUNT(*) total_count FROM candidate),
+        page AS (SELECT * FROM candidate ${cursorSql} ORDER BY rating_sort DESC,id DESC LIMIT ${SEARCH_PAGE_SIZE + 1})
+        SELECT page.*,counts.total_count FROM counts LEFT JOIN page ON 1=1 ORDER BY page.rating_sort DESC,page.id DESC`,
+      values: [...values, ...cursorValues],
+    };
+  }
+
+  const departureClauses = ["d.status='open'", "d.places_available-COALESCE(h.reserved_places,0)>=?", "d.cabins_available-COALESCE(h.reserved_cabins,0)>=1"];
+  const departureValues: unknown[] = [params.guests];
+  if (params.start && params.end) { departureClauses.push("d.start_date<=?", "d.end_date>=?"); departureValues.push(params.end, params.start); }
+  if (params.durationMin) { departureClauses.push("d.nights>=?"); departureValues.push(params.durationMin); }
+  if (params.durationMax) { departureClauses.push("d.nights<=?"); departureValues.push(params.durationMax); }
+  const yachtClauses = ["y.status='live'", "y.verified=1", "y.shared_enabled=1"];
+  const yachtValues: unknown[] = [];
+  if (params.yachtType) { yachtClauses.push("LOWER(y.type)=?"); yachtValues.push(params.yachtType); }
+  if (params.experience) { yachtClauses.push("EXISTS (SELECT 1 FROM json_each(y.experiences_json) e WHERE LOWER(CAST(e.value AS TEXT))=?)"); yachtValues.push(params.experience); }
+  return {
+    sql: `WITH active_holds AS (
+        SELECT departure_id,SUM(units) reserved_places,SUM(cabin_units) reserved_cabins
+        FROM availability_holds WHERE departure_id IS NOT NULL AND status='active' AND expires_at>?
+        GROUP BY departure_id
+      ), matching_departures AS (
+        SELECT d.*,d.places_available-COALESCE(h.reserved_places,0) places_remaining,
+          d.cabins_available-COALESCE(h.reserved_cabins,0) cabins_remaining
+        FROM departures d LEFT JOIN active_holds h ON h.departure_id=d.id
+        WHERE ${departureClauses.join(" AND ")}
+      ), candidate AS (
+        SELECT ${fields},json_group_array(json_object(
+          'id',d.id,'title',d.title,'start_date',d.start_date,'end_date',d.end_date,'nights',d.nights,
+          'cabins_available',d.cabins_available,'places_available',d.places_available,'price_pp',d.price_pp,
+          'mock_generated',d.mock_generated,'places_remaining',d.places_remaining,
+          'cabins_remaining',d.cabins_remaining,'available_units',d.places_remaining
+        )) matching_departures_json
+        FROM yachts y JOIN matching_departures d ON d.yacht_id=y.id
+        WHERE ${yachtClauses.join(" AND ")} GROUP BY y.id
+      ), counts AS (SELECT COUNT(*) total_count FROM candidate),
+      page AS (SELECT * FROM candidate ${cursorSql} ORDER BY rating_sort DESC,id DESC LIMIT ${SEARCH_PAGE_SIZE + 1})
+      SELECT page.*,counts.total_count FROM counts LEFT JOIN page ON 1=1 ORDER BY page.rating_sort DESC,page.id DESC`,
+    values: [timestamp, ...departureValues, ...yachtValues, ...cursorValues],
+  };
+}
+
+function anonymousRequest(request: Request): boolean {
+  return !request.headers.has("cookie") && !request.headers.has("authorization");
+}
+
+function canonicalSearchKey(url: URL): Request {
+  const key = new URL(url.origin + url.pathname);
+  const params = new URLSearchParams(url.searchParams);
+  params.sort();
+  key.search = params.toString();
+  return new Request(key.toString(), { method: "GET" });
+}
+
+async function searchApi(request: Request, env: Env, ctx: ExecutionContext, url: URL): Promise<Response> {
+  const started = performance.now(), params = searchParams(url), anonymous = anonymousRequest(request);
+  const key = canonicalSearchKey(url);
+  if (anonymous) {
+    const cached = await caches.default.match(key);
+    if (cached) {
+      const headers = new Headers(cached.headers), duration = performance.now() - started;
+      headers.set("X-Atolle-Cache", "HIT");
+      headers.set("Server-Timing", `cache;desc=\"HIT\";dur=${duration.toFixed(1)}, total;dur=${duration.toFixed(1)}`);
+      console.log(JSON.stringify({ event: "search", mode: params.mode, cache: "HIT", duration_ms: round(duration) }));
+      return new Response(cached.body, { status: cached.status, statusText: cached.statusText, headers });
+    }
+  }
+
+  const timestamp = now(), query = searchQuery(params, timestamp);
+  const database: D1Database | D1DatabaseSession = anonymous ? env.DB.withSession("first-unconstrained") : env.DB;
+  const dbStarted = performance.now();
+  const result = await database.prepare(query.sql).bind(...query.values).all<DbRow>();
+  const dbDuration = performance.now() - dbStarted;
+  const found = result.results.filter((item) => item.id != null);
+  const page = found.slice(0, SEARCH_PAGE_SIZE);
+  const items = page.map((item) => {
+    const parsed = row(item) as DbRow;
+    delete parsed.total_count; delete parsed.rating_sort;
+    return parsed;
+  });
+  const payload = {
+    items,
+    total: Number(result.results[0]?.total_count || 0),
+    next_cursor: found.length > SEARCH_PAGE_SIZE && page.length ? encodeSearchCursor(page[page.length - 1]) : null,
+  };
+  const responseBody = JSON.stringify(payload), payloadBytes = new TextEncoder().encode(responseBody).byteLength;
+  const duration = performance.now() - started, cacheStatus = anonymous ? "MISS" : "BYPASS";
+  const headers = new Headers(JSON_HEADERS);
+  headers.set("Cache-Control", anonymous ? "public, max-age=30" : "no-store");
+  headers.set("X-Atolle-Cache", cacheStatus);
+  headers.set("Server-Timing", `db;dur=${dbDuration.toFixed(1)}, total;dur=${duration.toFixed(1)}`);
+  const response = new Response(responseBody, { status: 200, headers });
+  if (anonymous) ctx.waitUntil(caches.default.put(key, response.clone()).catch((error) => {
+    console.error(JSON.stringify({ event: "search_cache_put_failed", error: error instanceof Error ? error.message : String(error) }));
+  }));
+  console.log(JSON.stringify({
+    event: "search", mode: params.mode, cache: cacheStatus, duration_ms: round(duration), db_duration_ms: round(dbDuration),
+    rows_read: result.meta.rows_read, rows_written: result.meta.rows_written, served_by_region: result.meta.served_by_region || null,
+    served_by_primary: result.meta.served_by_primary ?? null, payload_bytes: payloadBytes, returned: items.length, total: payload.total,
+  }));
+  return response;
+}
+
+async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: URL): Promise<Response> {
   const path = url.pathname;
   if (path === "/api/health") {
     const health = { ok: true, time: now(), environment: env.ENVIRONMENT, auth_enforced: env.ENFORCE_AUTH === "1" };
@@ -313,6 +477,12 @@ async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
         { role: "vendor", email: "operator@example.com", password: "AtolleVendor123!" },
       ],
     });
+  }
+  if (path === "/api/search") return searchApi(request, env, ctx, url);
+  if (path === "/api/search/options") {
+    const database: D1Database | D1DatabaseSession = anonymousRequest(request) ? env.DB.withSession("first-unconstrained") : env.DB;
+    const result = await database.prepare("SELECT DISTINCT type FROM yachts WHERE status='live' AND verified=1 AND private_enabled=1 AND type<>'' ORDER BY type").all<{ type: string }>();
+    return json({ types: result.results.map((item) => item.type) });
   }
   if (path === "/api/auth/me") {
     const actor = await userFor(request, env);
@@ -822,10 +992,10 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
   throw new HttpError("Unknown endpoint", 404);
 }
 
-async function api(request: Request, env: Env): Promise<Response> {
+async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   try {
-    if (request.method === "GET") return await getApi(request, env, url);
+    if (request.method === "GET") return await getApi(request, env, ctx, url);
     if (request.method === "POST") return await postApi(request, env, url);
     if (request.method === "PUT") return await putApi(request, env, url);
     return Response.json({ error: "Method not allowed" }, { status: 405, headers: { ...JSON_HEADERS, allow: "GET, POST, PUT" } });
@@ -837,9 +1007,13 @@ async function api(request: Request, env: Env): Promise<Response> {
 }
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
-    if (url.pathname.startsWith("/api/")) return api(request, env);
+    if (url.hostname === "www.maldivesliveaboardbooking.com") {
+      url.hostname = "maldivesliveaboardbooking.com";
+      return Response.redirect(url.toString(), 308);
+    }
+    if (url.pathname.startsWith("/api/")) return api(request, env, ctx);
     const response = await env.ASSETS.fetch(request);
     const headers = new Headers(response.headers);
     headers.set("x-content-type-options", "nosniff"); headers.set("x-frame-options", "DENY");
@@ -847,5 +1021,9 @@ export default {
     headers.set("strict-transport-security", "max-age=31536000; includeSubDomains");
     headers.set("content-security-policy", JSON_HEADERS["content-security-policy"]);
     return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
-  }
+  },
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const result = await env.DB.prepare("UPDATE availability_holds SET status='expired' WHERE status='active' AND expires_at<=?").bind(now()).run();
+    console.log(JSON.stringify({ event: "expired_hold_cleanup", changes: result.meta.changes, rows_written: result.meta.rows_written }));
+  },
 } satisfies ExportedHandler<Env>;

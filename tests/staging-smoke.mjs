@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 
-const origin = (process.env.ATOLLE_STAGING_ORIGIN || 'https://atolle-staging.aaishathhanaa.workers.dev').replace(/\/$/, '');
+const origin = (process.env.ATOLLE_STAGING_ORIGIN || 'https://maldivesliveaboardbooking.com').replace(/\/$/, '');
 const email = process.env.STAGING_TEST_EMAIL;
 const password = process.env.STAGING_TEST_PASSWORD;
 
@@ -20,6 +20,20 @@ assert.equal(result.response.status, 200);
 assert.equal(result.data?.ok, true);
 assert.equal(result.data?.environment, 'staging');
 assert.equal(result.data?.auth_enforced, true);
+assert.deepEqual(
+  result.data?.demo_accounts?.map(account => account.role).sort(),
+  ['admin', 'vendor'],
+  'staging health should expose the demo accounts',
+);
+
+const redirectPath = '/api/health?cutover=www&path=preserved';
+const redirectResponse = await fetch(`https://www.maldivesliveaboardbooking.com${redirectPath}`, { redirect: 'manual' });
+assert.equal(redirectResponse.status, 308, 'www should permanently redirect to the apex domain');
+assert.equal(
+  redirectResponse.headers.get('location'),
+  `https://maldivesliveaboardbooking.com${redirectPath}`,
+  'www redirect should preserve the path and query string',
+);
 
 for (const path of ['/', '/login.html', '/booking.html']) {
   result = await request(path);

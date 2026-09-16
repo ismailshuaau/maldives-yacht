@@ -13,9 +13,23 @@
     "enabled": true,
     "head_sampling_rate": 1
   },
+  "triggers": {
+    "crons": ["*/15 * * * *"]
+  },
   "env": {
     "staging": {
       "name": "atolle-staging",
+      "workers_dev": true,
+      "routes": [
+        {
+          "pattern": "maldivesliveaboardbooking.com",
+          "custom_domain": true
+        },
+        {
+          "pattern": "www.maldivesliveaboardbooking.com",
+          "custom_domain": true
+        }
+      ],
       "assets": {
         "directory": "./public",
         "binding": "ASSETS",

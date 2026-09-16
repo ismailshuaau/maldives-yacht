@@ -16,3 +16,20 @@ INSERT INTO platform_settings(key,value,updated_at) VALUES
  ('commission_rate','30',datetime('now')),
  ('hold_minutes','30',datetime('now')),
  ('currency','USD',datetime('now'));
+
+WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<14)
+INSERT INTO yachts(id,vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,description,image,private_rate,shared_rate,amenities_json,experiences_json,rating,reviews,verified,updated_at)
+SELECT 100+n,1,'Search Yacht '||printf('%02d',n),'search-yacht-'||n,
+  CASE WHEN n%2=0 THEN 'Motor Yacht' ELSE 'Liveaboard' END,'live',1,1,20,10,5,32,
+  'A yacht used to verify cursor pagination.','https://example.com/yacht-'||n||'.jpg',1200,250,
+  '["Nitrox","Wi-Fi"]',CASE WHEN n%2=0 THEN '["Diving"]' ELSE '["Diving","Luxury escape"]' END,
+  4.9-(n/100.0),n,1,datetime('now') FROM seq;
+
+WITH RECURSIVE seq(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM seq WHERE n<14)
+INSERT INTO departures(id,yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status,mock_generated)
+SELECT 100+n,100+n,'Search Departure '||n,date('now','+90 days'),date('now','+95 days'),5,10,10,20,20,1250,'open',0 FROM seq;
+
+INSERT INTO bookings(id,booking_ref,yacht_id,departure_id,mode,guest_name,email,guests,start_date,end_date,nights,total_amount,status,expires_at,created_at,updated_at)
+VALUES(90,'EXPIRED-SEARCH-HOLD',1,1,'shared','Expired Hold','expired@example.com',12,date('now','+90 days'),date('now','+95 days'),5,3600,'cancelled',datetime('now','-1 hour'),datetime('now','-2 hours'),datetime('now','-2 hours'));
+INSERT INTO availability_holds(id,booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at)
+VALUES(90,90,1,1,date('now','+90 days'),date('now','+95 days'),12,6,datetime('now','-1 hour'),'active',datetime('now','-2 hours'));
