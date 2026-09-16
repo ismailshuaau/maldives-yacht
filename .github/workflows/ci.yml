@@ -44,7 +44,7 @@ jobs:
     timeout-minutes: 15
     environment:
       name: staging
-      url: https://atolle-staging.aaishathhanaa.workers.dev
+      url: https://maldivesliveaboardbooking.com
     concurrency:
       group: staging-deploy
       cancel-in-progress: false
@@ -80,7 +80,7 @@ jobs:
 
       - name: Verify staging deployment
         env:
-          ATOLLE_STAGING_ORIGIN: https://atolle-staging.aaishathhanaa.workers.dev
+          ATOLLE_STAGING_ORIGIN: https://maldivesliveaboardbooking.com
           STAGING_TEST_EMAIL: ${{ secrets.STAGING_TEST_EMAIL }}
           STAGING_TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
         run: npm run test:staging
@@ -92,4 +92,4 @@ jobs:
         run: |
           echo "### Staging deployed" >> "$GITHUB_STEP_SUMMARY"
           echo "- Commit: \`$DEPLOYED_SHA\`" >> "$GITHUB_STEP_SUMMARY"
-          echo "- URL: https://atolle-staging.aaishathhanaa.workers.dev" >> "$GITHUB_STEP_SUMMARY"
+          echo "- URL: https://maldivesliveaboardbooking.com" >> "$GITHUB_STEP_SUMMARY"

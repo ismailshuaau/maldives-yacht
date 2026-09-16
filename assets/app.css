@@ -85,7 +85,8 @@ img { display:block }
   border-bottom:1px solid #244147; background:#041418; color:#fff;
 }
 .topnav .wrap { display:flex; align-items:center; justify-content:space-between; min-width:0 }
-.brand { font:700 33px/.92 var(--font-display); letter-spacing:-.025em }
+.brand { min-width:0; font:700 23px/.92 var(--font-display); letter-spacing:-.035em; overflow-wrap:anywhere }
+.topnav .brand { flex:none; white-space:nowrap }
 .brand small {
   display:block; margin-top:5px; color:#a9c0c3; font:700 9px/1 var(--font-body);
   letter-spacing:.18em; text-transform:uppercase;
@@ -180,6 +181,10 @@ img { display:block }
 .field:focus-within { background:var(--aqua); outline:3px solid var(--sea); outline-offset:-3px }
 .field input:focus-visible,.field select:focus-visible { outline:0 }
 .search .btn { min-width:150px; min-height:calc(100% + 2px); margin:-1px }
+.btn .buttonSpinner { display:none; width:15px; height:15px; flex:none; border:2px solid currentColor; border-right-color:transparent; border-radius:50% }
+.btn.isLoading { display:flex; align-items:center; justify-content:center; gap:9px; cursor:wait }
+.btn.isLoading .buttonSpinner { display:inline-block; animation:loaderSpin .75s linear infinite }
+.search .btn:disabled { opacity:.82 }
 .monthField { position:relative }
 .monthTrigger {
   display:flex; align-items:center; justify-content:space-between; gap:12px; width:100%; min-height:27px;
@@ -284,7 +289,7 @@ img { display:block }
   position:sticky; top:0; height:100vh; padding:27px 18px; border-right:1px solid #29464c;
   background:#071f24; color:#fff;
 }
-.side .brand { margin:0 12px 32px }
+.side .brand { margin:0 12px 32px; font-size:17px }
 .side a {
   display:block; margin:0; padding:12px; border:1px solid transparent; border-radius:0;
   color:#bdd0d2; font-size:13px; font-weight:650;
@@ -322,6 +327,9 @@ img { display:block }
   border-radius:0; object-fit:cover; vertical-align:middle;
 }
 .formgrid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px }
+.demoAccounts { padding:14px; border:1px solid var(--line); background:#f8faf9 }
+.demoAccounts > .muted { margin-bottom:10px; font-size:12px }
+.demoAccountButtons { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px }
 .control input,.control select,.control textarea,.input {
   width:100%; min-height:44px; padding:10px 12px; border:1px solid var(--line-strong);
   border-radius:0; background:#fff; color:var(--ink);
@@ -479,7 +487,7 @@ footer {
   .customSelectMenu { max-width:calc(100vw - 16px) }
   .wrap { padding:0 16px }
   .topnav { height:70px }
-  .brand { font-size:27px }
+  .brand { font-size:15px }
   .brand small { font-size:8px }
   .links { flex:none; gap:8px }
   .links a:not(.btn) { display:none }
@@ -534,7 +542,7 @@ footer {
   .panel { overflow-x:auto }
 }
 
-/* Yacht detail — reference-inspired hierarchy with Atollé styling */
+/* Yacht detail — reference-inspired hierarchy with maldivesliveaboardbooking styling */
 .yachtPage { padding-bottom:0 }
 .yachtHero { padding-top:34px }
 .yachtHeroHead { display:flex; align-items:flex-end; justify-content:space-between; gap:30px }
@@ -695,6 +703,34 @@ footer {
 .successReference strong { color:var(--sea) }
 .wizardSuccess #holdExpiry { margin:0 0 24px; color:var(--muted) }
 .wizardSuccess .btn { min-width:240px }
+.resultsSentinel { height:1px }
+.loadMoreWrap { display:grid; justify-items:center; gap:8px; margin-top:28px; text-align:center }
+.loadMoreWrap .searchMessage { min-height:20px; margin:0 }
+.resultsLoadingStatus { display:flex; align-items:center; gap:12px; margin:24px 0 -12px; color:var(--sea); font-size:13px; font-weight:800 }
+.resultsLoadingStatus[hidden] { display:none }
+.nauticalLoader { display:flex; align-items:center; gap:3px; width:32px; height:18px; padding:0 3px; border-bottom:2px solid #8bc9c5 }
+.nauticalLoader i { width:5px; height:5px; border-radius:50%; background:var(--sea); animation:loaderWave .9s ease-in-out infinite }
+.nauticalLoader i:nth-child(2) { animation-delay:.12s }
+.nauticalLoader i:nth-child(3) { animation-delay:.24s }
+.skeletonResult { pointer-events:none }
+.skeletonResult .skeletonImage,.skeletonLine { background:linear-gradient(100deg,#e5ecea 20%,#f6f9f8 40%,#e5ecea 60%); background-size:220% 100%; animation:skeletonShimmer 1.35s ease-in-out infinite }
+.grid3 .skeletonResult .skeletonImage { height:260px; border-bottom:1px solid var(--line) }
+.skeletonResult .skeletonLine { display:block; width:72%; height:13px; margin-bottom:16px }
+.skeletonResult .skeletonLine:nth-child(2) { width:48%; height:24px }
+.skeletonResult .skeletonLine:nth-child(3) { width:88% }
+.skeletonShort { display:flex; gap:12px; margin-top:30px }
+.skeletonShort .skeletonLine { width:92px; height:28px; margin:0 }
+.sharedResults .skeletonImage { min-height:290px; border-right:1px solid var(--line) }
+.skeletonDeparture { display:grid; grid-template-columns:1.25fr 1.5fr 1.25fr; gap:18px; padding:27px 20px; border-top:1px solid var(--line-strong) }
+.skeletonDeparture .skeletonLine { width:76%; margin:0 }
+@keyframes loaderSpin { to { transform:rotate(360deg) } }
+@keyframes loaderWave { 0%,100% { transform:translateY(2px) } 50% { transform:translateY(-4px) } }
+@keyframes skeletonShimmer { to { background-position:-220% 0 } }
+
+@media (prefers-reduced-motion:reduce) {
+  .btn.isLoading .buttonSpinner,.nauticalLoader i,.skeletonResult .skeletonImage,.skeletonLine { animation:none }
+  .btn.isLoading .buttonSpinner { border-right-color:currentColor }
+}
 
 @media (max-width:980px) {
   .yachtGallery { grid-template-rows:190px 190px }
@@ -707,6 +743,10 @@ footer {
   .tripSummaryImage { height:100% }
 }
 @media (max-width:650px) {
+  .resultsLoadingStatus { margin-top:20px }
+  .grid3 .skeletonResult .skeletonImage { height:230px }
+  .sharedResults .skeletonImage { min-height:225px; border-right:0; border-bottom:1px solid var(--line) }
+  .skeletonDeparture { grid-template-columns:1fr 1fr; padding:18px }
   .yachtPage { padding-bottom:76px }
   .yachtHero { padding-top:25px }
   .yachtHeroHead { align-items:flex-start; flex-direction:column; gap:17px }

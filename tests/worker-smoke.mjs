@@ -10,7 +10,56 @@ async function call(path, options = {}) {
 
 let result = await call('/api/yachts?status=draft');
 assert.equal(result.response.status, 200);
-assert.equal(result.data.length, 1, 'public catalogue should expose only the verified live fixture');
+assert.equal(result.data.length, 15, 'public catalogue should expose only verified live fixtures');
+
+result = await call('/api/search/options');
+assert.equal(result.response.status, 200);
+assert.deepEqual(result.data.types, ['Liveaboard', 'Motor Yacht']);
+
+const searchDates = `start=${isoDate(80)}&end=${isoDate(110)}`;
+result = await call(`/api/search?mode=shared&${searchDates}&guests=2`);
+assert.equal(result.response.status, 200, JSON.stringify(result.data));
+assert.equal(result.response.headers.get('x-atolle-cache'), 'MISS');
+assert.match(result.response.headers.get('server-timing') || '', /db;dur=/);
+assert.equal(result.data.total, 15);
+assert.equal(result.data.items.length, 12);
+assert.ok(result.data.next_cursor);
+assert.equal(new Set(result.data.items.map(item => item.id)).size, 12);
+assert.ok(result.data.items.every(item => item.matching_departures.length === 1));
+assert.ok(result.data.items.some(item => item.id === 1), 'an expired hold must not hide its departure');
+
+const firstPageIds = new Set(result.data.items.map(item => item.id));
+const secondPage = await call(`/api/search?mode=shared&${searchDates}&guests=2&cursor=${encodeURIComponent(result.data.next_cursor)}`);
+assert.equal(secondPage.response.status, 200, JSON.stringify(secondPage.data));
+assert.equal(secondPage.data.items.length, 3);
+assert.equal(secondPage.data.next_cursor, null);
+assert.ok(secondPage.data.items.every(item => !firstPageIds.has(item.id)), 'cursor pages must not contain duplicates');
+
+result = await call(`/api/search?mode=private&${searchDates}&guests=4&type=Motor%20Yacht&experience=Diving`);
+assert.equal(result.response.status, 200);
+assert.equal(result.data.total, 7);
+assert.ok(result.data.items.every(item => item.type === 'Motor Yacht'));
+
+result = await call(`/api/search?mode=shared&${searchDates}&guests=2&duration_min=6`);
+assert.equal(result.response.status, 200);
+assert.equal(result.data.total, 0);
+assert.deepEqual(result.data.items, []);
+
+assert.equal((await call(`/api/search?mode=shared&${searchDates}&cursor=broken`)).response.status, 400);
+
+const cachePath = `/api/search?mode=shared&${searchDates}&guests=3&experience=Luxury%20escape`;
+const cacheMiss = await call(cachePath);
+assert.equal(cacheMiss.response.headers.get('x-atolle-cache'), 'MISS');
+let cacheHit;
+for (let attempt = 0; attempt < 10; attempt += 1) {
+  await new Promise(resolve => setTimeout(resolve, 25));
+  cacheHit = await call(cachePath);
+  if (cacheHit.response.headers.get('x-atolle-cache') === 'HIT') break;
+}
+assert.equal(cacheHit.response.headers.get('x-atolle-cache'), 'HIT');
+result = await call(cachePath, { headers: { Cookie: 'authenticated=1' } });
+assert.equal(result.response.headers.get('x-atolle-cache'), 'BYPASS');
+assert.match(result.response.headers.get('cache-control') || '', /no-store/);
 
 result = await call('/api/yachts/1/availability?start=not-a-date&end=also-bad');
 assert.equal(result.response.status, 400);

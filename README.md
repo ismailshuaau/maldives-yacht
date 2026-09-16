@@ -1,6 +1,6 @@
-# Atollé — Maldives Yacht Marketplace MVP
+# maldivesliveaboardbooking — Maldives Yacht Marketplace MVP
 
-Atollé is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
+maldivesliveaboardbooking is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
 
 ## Included
 
@@ -53,9 +53,9 @@ Then open:
 
 The Cloudflare-native staging deployment is available at:
 
-- https://atolle-staging.aaishathhanaa.workers.dev
+- https://maldivesliveaboardbooking.com
 
-It serves the frontend through Workers Static Assets and runs the API in a TypeScript Worker backed by the `atolle-staging` D1 database. Authentication is enforced, the documented demo accounts are enabled, and BML remains in mock/sandbox mode. The demo accounts are staging-only and must not be enabled in production.
+The apex domain is canonical and `www.maldivesliveaboardbooking.com` permanently redirects to it. The Worker continues to be available at `https://atolle-staging.aaishathhanaa.workers.dev` as an operational fallback. It serves the frontend through Workers Static Assets and runs the API in a TypeScript Worker backed by the `atolle-staging` D1 database. Authentication is enforced, the documented demo accounts are enabled, and BML remains in mock/sandbox mode. The demo accounts are staging-only and must not be enabled in production.
 
 To validate and redeploy:
 
@@ -66,7 +66,10 @@ npx tsc
 npx wrangler d1 migrations apply DB --env staging --remote
 npx wrangler d1 execute DB --env staging --remote --file cloudflare/staging/enable-demo-users.sql
 npm run deploy:staging
+npm run test:staging:performance
 ```
+
+Enable D1 read replication for `atolle-staging` in **Cloudflare Dashboard → D1 → atolle-staging → Settings**. Anonymous search reads use `DB.withSession("first-unconstrained")`; authenticated requests and writes continue to use the primary binding.
 
 ### Automatic staging deployment
 
@@ -100,7 +103,7 @@ This package is a functional product MVP, not a production deployment. A commerc
 
 ## Demo media and listing data
 
-The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original Atollé vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
+The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original maldivesliveaboardbooking vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
 
 ## BML Connect payment integration
 
