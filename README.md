@@ -1,6 +1,6 @@
-# maldivesliveaboardbooking — Maldives Yacht Marketplace MVP
+# MaldivesLiveaboardBooking — Maldives Yacht Marketplace MVP
 
-maldivesliveaboardbooking is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
+MaldivesLiveaboardBooking is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
 
 ## Included
 
@@ -103,7 +103,7 @@ This package is a functional product MVP, not a production deployment. A commerc
 
 ## Demo media and listing data
 
-The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original maldivesliveaboardbooking vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
+The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original MaldivesLiveaboardBooking vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
 
 ## BML Connect payment integration
 

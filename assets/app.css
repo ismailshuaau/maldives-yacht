@@ -542,7 +542,7 @@ footer {
   .panel { overflow-x:auto }
 }
 
-/* Yacht detail — reference-inspired hierarchy with maldivesliveaboardbooking styling */
+/* Yacht detail — reference-inspired hierarchy with MaldivesLiveaboardBooking styling */
 .yachtPage { padding-bottom:0 }
 .yachtHero { padding-top:34px }
 .yachtHeroHead { display:flex; align-items:flex-end; justify-content:space-between; gap:30px }
