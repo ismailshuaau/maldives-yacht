@@ -74,7 +74,9 @@ with tempfile.TemporaryDirectory() as td:
         assert shared_booking['total_amount']==round(dep['price_pp']*2,2)
 
         y=yachts[0]
-        b=call('/api/bookings','POST',{'yacht_id':y['id'],'mode':'private','guest_name':'Smoke Test','email':'smoke@example.com','guests':2,'start_date':'2026-12-01','end_date':'2026-12-04'})
+        private_start=today+timedelta(days=120)
+        private_end=private_start+timedelta(days=3)
+        b=call('/api/bookings','POST',{'yacht_id':y['id'],'mode':'private','guest_name':'Smoke Test','email':'smoke@example.com','guests':2,'start_date':str(private_start),'end_date':str(private_end)})
         pay=call('/api/payments/create','POST',{'booking_id':b['id'],'payment_type':'deposit'},token)
         assert round(pay['commission_rate'],2)==30
         assert round(pay['commission_amount'],2)==round(pay['gross_amount']*.30,2)
