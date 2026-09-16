@@ -303,7 +303,17 @@ function quoteResponse(selection: BookingSelection): DbRow {
 
 async function getApi(request: Request, env: Env, url: URL): Promise<Response> {
   const path = url.pathname;
-  if (path === "/api/health") return json({ ok: true, time: now(), environment: env.ENVIRONMENT, auth_enforced: env.ENFORCE_AUTH === "1" });
+  if (path === "/api/health") {
+    const health = { ok: true, time: now(), environment: env.ENVIRONMENT, auth_enforced: env.ENFORCE_AUTH === "1" };
+    if (env.ENVIRONMENT !== "staging") return json(health);
+    return json({
+      ...health,
+      demo_accounts: [
+        { role: "admin", email: "admin@atolle.mv", password: "AtolleAdmin123!" },
+        { role: "vendor", email: "operator@example.com", password: "AtolleVendor123!" },
+      ],
+    });
+  }
   if (path === "/api/auth/me") {
     const actor = await userFor(request, env);
     if (!actor) return json({ authenticated: false }, 401);
