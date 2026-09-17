@@ -64,7 +64,9 @@ assert.match(result.response.headers.get('cache-control') || '', /no-store/);
 result = await call('/api/yachts/1/availability?start=not-a-date&end=also-bad');
 assert.equal(result.response.status, 400);
 
-const booking = { yacht_id: 1, mode: 'private', guests: 2, cabins_booked: 0, start_date: isoDate(120), end_date: isoDate(124), guest_name: 'Test Guest', email: 'guest@example.com' };
+const bookingConfig = await call('/api/booking-config');
+assert.equal(bookingConfig.response.status, 200);
+const booking = { yacht_id: 1, mode: 'private', guests: 2, cabins_booked: 0, start_date: isoDate(120), end_date: isoDate(124), guest_name: 'Test Guest', email: 'guest@example.com', conditions_accepted: true, conditions_version: bookingConfig.data.conditions_version, travelers: [{ full_name: 'Test Guest', rooming_preference: 'private' }, { full_name: '', rooming_preference: 'private' }] };
 result = await call('/api/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(booking) });
 assert.equal(result.response.status, 400, 'booking must require idempotency');
 

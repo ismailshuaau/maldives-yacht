@@ -51,21 +51,26 @@ type DbRow = Record<string, unknown>;
 function row(raw: DbRow | null): DbRow | null {
   if (!raw) return null;
   const item = { ...raw };
-  for (const key of ["amenities_json", "experiences_json", "gallery_json", "matching_departures_json", "detail_json", "raw_response"]) {
+  for (const key of ["amenities_json", "experiences_json", "gallery_json", "occupancy_modes_json", "matching_departures_json", "itinerary_json", "booking_conditions_json", "conditions_snapshot_json", "detail_json", "raw_response"]) {
     if (!(key in item)) continue;
     try {
-      const parsed = JSON.parse(String(item[key] || (key.endsWith("_json") ? "[]" : "{}")));
+      const objectValue = ["booking_conditions_json","conditions_snapshot_json","detail_json","raw_response"].includes(key);
+      const parsed = JSON.parse(String(item[key] || (objectValue ? "{}" : "[]")));
       if (key.endsWith("_json")) { item[key.slice(0, -5)] = parsed; delete item[key]; }
       else item[key] = parsed;
     } catch { /* Preserve malformed legacy data for inspection. */ }
   }
-  for (const key of ["private_enabled", "shared_enabled", "mock_generated", "verified", "active"]) {
+  for (const key of ["private_enabled", "shared_enabled", "private_rate_public", "private_instant_booking", "mock_generated", "verified", "active", "air_conditioning", "ensuite"]) {
     if (key in item) item[key] = bool(item[key]);
   }
   if (Array.isArray(item.experiences)) item.experiences = item.experiences.map((value) => String(value).toLowerCase() === "shared liveaboard" ? "Liveaboard" : value);
   return item;
 }
 function rows(result: D1Result<DbRow>): DbRow[] { return result.results.map((item) => row(item) as DbRow); }
+function publicYacht(item: DbRow): DbRow {
+  if (!item.private_rate_public) item.private_rate = null;
+  return item;
+}
 function safePayment(item: DbRow): DbRow { const value = row(item) as DbRow; delete value.raw_response; delete value.access_token_hash; delete value.idempotency_key; return value; }
 
 async function body(request: Request): Promise<DbRow> {
@@ -207,6 +212,7 @@ async function departure(env: Env, raw: DbRow): Promise<DbRow> {
     FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?`).bind(item.id, now()).first<DbRow>();
   item.places_remaining = Math.max(0, Number(item.places_available || 0) - Number(reserved?.places || 0));
   item.cabins_remaining = Math.max(0, Number(item.cabins_available || 0) - Number(reserved?.cabins || 0));
+  item.cabin_inventory = await cabinInventoryFor(env, item.id);
   return item;
 }
 function joinedDeparture(raw: DbRow): DbRow {
@@ -215,6 +221,20 @@ function joinedDeparture(raw: DbRow): DbRow {
   item.cabins_remaining = Math.max(0, Number(item.cabins_available || 0) - Number(item.reserved_cabins || 0));
   delete item.reserved_places; delete item.reserved_cabins;
   return item;
+}
+async function cabinInventoryFor(env: Env, departureId: unknown): Promise<DbRow[]> {
+  const found = await env.DB.prepare(`SELECT i.*,c.yacht_id,c.name,c.deck,c.bed_configuration,c.description,c.image,c.gallery_json,c.window_type,c.air_conditioning,c.ensuite,c.occupancy_modes_json,c.capacity,c.sort_order,
+    MAX(0,(i.cabins_available*c.capacity)-COALESCE(SUM(CASE WHEN h.status='active' AND h.expires_at>? THEN CASE WHEN hi.inventory_units>0 THEN hi.inventory_units ELSE hi.cabins*c.capacity END ELSE 0 END),0)) spaces_remaining,
+    CAST(MAX(0,(i.cabins_available*c.capacity)-COALESCE(SUM(CASE WHEN h.status='active' AND h.expires_at>? THEN CASE WHEN hi.inventory_units>0 THEN hi.inventory_units ELSE hi.cabins*c.capacity END ELSE 0 END),0))/c.capacity AS INTEGER) cabins_remaining
+    FROM departure_cabin_inventory i JOIN yacht_cabin_types c ON c.id=i.cabin_type_id
+    LEFT JOIN availability_hold_cabin_items hi ON hi.departure_id=i.departure_id AND hi.cabin_type_id=i.cabin_type_id
+    LEFT JOIN availability_holds h ON h.id=hi.hold_id
+    WHERE i.departure_id=? AND c.active=1 GROUP BY i.departure_id,i.cabin_type_id ORDER BY c.sort_order,c.id`)
+    .bind(now(), now(), departureId).all<DbRow>();
+  return rows(found);
+}
+async function cabinTypesFor(env: Env, yachtId: unknown): Promise<DbRow[]> {
+  return rows(await env.DB.prepare("SELECT * FROM yacht_cabin_types WHERE yacht_id=? AND active=1 ORDER BY sort_order,id").bind(yachtId).all<DbRow>());
 }
 async function departuresFor(env: Env, yachtId?: unknown, onlyOpen = false): Promise<DbRow[]> {
   const clauses: string[] = [], values: unknown[] = [now()];
@@ -226,12 +246,30 @@ async function departuresFor(env: Env, yachtId?: unknown, onlyOpen = false): Pro
     FROM departures d LEFT JOIN availability_holds h ON h.departure_id=d.id
     ${clauses.length ? `WHERE ${clauses.join(" AND ")}` : ""} GROUP BY d.id ORDER BY d.mock_generated ASC,d.start_date,d.id`)
     .bind(values[0], ...values).all<DbRow>();
-  return found.results.map(joinedDeparture);
+  const output = found.results.map(joinedDeparture);
+  await Promise.all(output.map(async (item) => { item.cabin_inventory = await cabinInventoryFor(env, item.id); }));
+  return output;
 }
 function validDates(start: unknown, end: unknown): boolean {
   return typeof start === "string" && typeof end === "string" && validCalendarDate(start) && validCalendarDate(end) && end > start;
 }
 function dateNights(start: string, end: string): number { return Math.round((Date.parse(end) - Date.parse(start)) / 86_400_000); }
+function enforcePrivateNightLimits(yacht: DbRow, nights: number): void {
+  const minimum = Number(yacht.private_min_nights || 0), maximum = Number(yacht.private_max_nights || 0);
+  if (minimum && nights < minimum) throw new HttpError(`This yacht requires at least ${minimum} nights`, 409);
+  if (maximum && nights > maximum) throw new HttpError(`This yacht allows a maximum of ${maximum} nights`, 409);
+}
+function privateSettings(data: DbRow, current: DbRow = {}): { ratePublic: boolean; instantBooking: boolean; minNights: number | null; maxNights: number | null; rate: number | null } {
+  const ratePublic = "private_rate_public" in data ? bool(data.private_rate_public) : bool(current.private_rate_public);
+  const instantBooking = "private_instant_booking" in data ? bool(data.private_instant_booking) : bool(current.private_instant_booking);
+  const rate = "private_rate" in data ? numberField(data, "private_rate", { minimum: 0, maximum: 10_000_000 }) : Number(current.private_rate) || null;
+  const minNights = "private_min_nights" in data ? numberField(data, "private_min_nights", { integer: true, minimum: 1, maximum: 365 }) : Number(current.private_min_nights) || null;
+  const maxNights = "private_max_nights" in data ? numberField(data, "private_max_nights", { integer: true, minimum: 1, maximum: 365 }) : Number(current.private_max_nights) || null;
+  if (minNights && maxNights && maxNights < minNights) throw new HttpError("private_max_nights must be greater than or equal to private_min_nights");
+  if (ratePublic && (!rate || rate <= 0)) throw new HttpError("Publishing a private rate requires a positive nightly rate");
+  if (instantBooking && (!ratePublic || !rate || rate <= 0)) throw new HttpError("Instant booking requires a disclosed positive private rate");
+  return { ratePublic, instantBooking, minNights, maxNights, rate };
+}
 
 type BookingSelection = {
   yacht: DbRow;
@@ -248,6 +286,7 @@ type BookingSelection = {
   deposit: number;
   balance: number;
   currency: string;
+  cabinSelections: DbRow[];
 };
 
 async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection> {
@@ -259,31 +298,55 @@ async function bookingSelection(env: Env, data: DbRow): Promise<BookingSelection
   let departureId: unknown = data.departure_id || null;
   let departureRow: DbRow | null = null;
   let start = String(data.start_date || ""), end = String(data.end_date || ""), nights = 0, total = 0, cabinsBooked = 0;
+  let cabinSelections: DbRow[] = [];
   if (mode === "private") {
     if (!yacht.private_enabled) throw new HttpError("Private charter unavailable", 409);
+    if (!yacht.private_instant_booking || !yacht.private_rate_public || Number(yacht.private_rate || 0) <= 0) throw new HttpError("This yacht accepts charter enquiries rather than instant bookings", 409);
     if (!validDates(start, end)) throw new HttpError("Valid start_date and end_date are required");
     if (start < now().slice(0, 10)) throw new HttpError("Start date cannot be in the past");
     nights = dateNights(start, end);
+    enforcePrivateNightLimits(yacht, nights);
     if (guests > Number(yacht.guests)) throw new HttpError("Guest count exceeds yacht capacity");
     if (await overlap(env, yacht.id, start, end)) throw new HttpError("These dates are no longer available", 409);
     total = round(Number(yacht.private_rate || 0) * nights);
     departureId = null;
   } else {
     if (!yacht.shared_enabled) throw new HttpError("Liveaboard unavailable", 409);
-    cabinsBooked = Number(data.cabins_booked);
-    if (!Number.isInteger(cabinsBooked) || cabinsBooked < 1 || cabinsBooked > guests) throw new HttpError("Cabins must be between one and the number of guests");
     const raw = await env.DB.prepare("SELECT * FROM departures WHERE id=? AND yacht_id=? AND status='open'").bind(departureId, yacht.id).first<DbRow>();
     if (!raw) throw new HttpError("Liveaboard departure not found", 404);
     departureRow = await departure(env, raw);
     if (String(departureRow.end_date) < now().slice(0, 10)) throw new HttpError("This departure has ended", 409);
+    if (!Array.isArray(data.cabin_selections) || !data.cabin_selections.length || data.cabin_selections.length > 20) throw new HttpError("Choose at least one cabin category");
+    const inventory = await cabinInventoryFor(env, departureId), byId = new Map(inventory.map((item) => [String(item.cabin_type_id), item]));
+    const seen = new Set<string>(); let allocatedGuests = 0;
+    cabinSelections = data.cabin_selections.map((rawSelection) => {
+      if (!rawSelection || typeof rawSelection !== "object" || Array.isArray(rawSelection)) throw new HttpError("cabin_selections is invalid");
+      const requested = rawSelection as DbRow, typeId = String(requested.cabin_type_id || ""), item = byId.get(typeId);
+      const selectedGuests = Number(requested.guests);
+      if (!item || seen.has(typeId)) throw new HttpError("Cabin category is invalid");
+      seen.add(typeId);
+      if (!Number.isInteger(selectedGuests) || selectedGuests < 1) throw new HttpError("Allocated guests must be a positive whole number");
+      const modes = Array.isArray(item.occupancy_modes) ? item.occupancy_modes.map(String) : ["private"];
+      const occupancy = String(requested.occupancy_preference || (requested.cabins ? "private" : modes[0]));
+      if (!["shared","private"].includes(occupancy) || !modes.includes(occupancy)) throw new HttpError(`${item.name} does not support that occupancy choice`);
+      const capacity = Math.max(1,Number(item.capacity)), cabins = Math.ceil(selectedGuests/capacity);
+      const inventoryUnits = occupancy === "shared" ? selectedGuests : cabins*capacity;
+      if (inventoryUnits > Number(item.spaces_remaining || 0)) throw new HttpError(`${item.name} no longer has enough space`,409);
+      const timestamp=now(),promoActive=(!item.promotion_starts_at||String(item.promotion_starts_at)<=timestamp)&&(!item.promotion_ends_at||String(item.promotion_ends_at)>=timestamp);
+      const listPrice=Number(item.list_price_pp||item.price_pp),price=promoActive?Number(item.price_pp):listPrice,unused=Math.max(0,inventoryUnits-selectedGuests);
+      const rate=occupancy==="private"&&modes.includes("shared")?Number(item.privacy_surcharge_percent||0):Number(item.single_occupancy_surcharge_percent||0);
+      const surcharge=round(unused*price*rate/100),discount=round(Math.max(0,listPrice-price)*selectedGuests),lineTotal=round(selectedGuests*price+surcharge);
+      allocatedGuests += selectedGuests; cabinsBooked += cabins;
+      return { cabin_type_id: Number(item.cabin_type_id), cabin_type_name: item.name, cabins, guests: selectedGuests, capacity, inventory_units: inventoryUnits, occupancy_preference: occupancy, list_price_pp: listPrice, price_pp: price, discount_amount: discount, surcharge_amount: surcharge, line_total: lineTotal };
+    });
+    if (allocatedGuests !== guests) throw new HttpError("Allocated cabin guests must equal the total guest count");
     if (guests > Number(departureRow.places_remaining)) throw new HttpError("Not enough passenger places remain", 409);
-    if (cabinsBooked > Number(departureRow.cabins_remaining)) throw new HttpError("Not enough cabins remain", 409);
     start = String(departureRow.start_date); end = String(departureRow.end_date); nights = Number(departureRow.nights);
-    total = round(Number(departureRow.price_pp || 0) * guests);
+    total = round(cabinSelections.reduce((sum, item) => sum + Number(item.line_total), 0));
   }
   const depositPercent = Math.max(0, Math.min(100, Number(await setting(env, "deposit_percent", "30"))));
   const deposit = round(total * depositPercent / 100), currency = await setting(env, "currency", "USD");
-  return { yacht, departure: departureRow, departureId, mode, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, balance: round(total - deposit), currency };
+  return { yacht, departure: departureRow, departureId, mode, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, balance: round(total - deposit), currency, cabinSelections };
 }
 
 function quoteResponse(selection: BookingSelection): DbRow {
@@ -291,6 +354,7 @@ function quoteResponse(selection: BookingSelection): DbRow {
     yacht_id: selection.yacht.id, mode: selection.mode, departure_id: selection.departureId,
     start_date: selection.start, end_date: selection.end, nights: selection.nights,
     guests: selection.guests, cabins_booked: selection.cabinsBooked,
+    cabin_selections: selection.cabinSelections,
     total: selection.total, total_amount: selection.total, deposit_percent: selection.depositPercent,
     deposit_amount: selection.deposit, balance: selection.balance, balance_amount: selection.balance, currency: selection.currency,
   };
@@ -305,7 +369,22 @@ type SearchParams = {
   experience: string;
   durationMin: number;
   durationMax: number;
+  priceMin: number;
+  priceMax: number;
+  amenities: string[];
   cursor: { rating: number; id: number } | null;
+};
+
+const AMENITY_CHOICES = ["Nitrox", "Internet", "Air-conditioned cabins", "En-suite bathrooms", "Jacuzzi", "Family cabins", "Spa", "Snorkeller-friendly"] as const;
+const AMENITY_ALIASES: Record<string, string[]> = {
+  "Nitrox": ["nitrox"],
+  "Internet": ["internet", "wi-fi", "wifi", "wi fi"],
+  "Air-conditioned cabins": ["air-conditioned cabins", "air conditioned cabins", "air conditioning", "air-conditioning", "ac cabins"],
+  "En-suite bathrooms": ["en-suite bathrooms", "ensuite bathrooms", "en suite bathrooms", "en-suite bathroom", "ensuite"],
+  "Jacuzzi": ["jacuzzi", "hot tub"],
+  "Family cabins": ["family cabins", "family cabin"],
+  "Spa": ["spa", "wellness spa"],
+  "Snorkeller-friendly": ["snorkeller-friendly", "snorkeler-friendly", "snorkelling", "snorkeling", "snorkelling gear", "snorkeling gear"],
 };
 
 const SEARCH_PAGE_SIZE = 12;
@@ -336,17 +415,22 @@ function searchParams(url: URL): SearchParams {
   const durationMin = Number(url.searchParams.get("duration_min") || 0);
   const durationMax = Number(url.searchParams.get("duration_max") || 0);
   if (![durationMin, durationMax].every((value) => Number.isInteger(value) && value >= 0 && value <= 365) || (durationMin && durationMax && durationMin > durationMax)) throw new HttpError("duration is invalid");
+  const priceMin = Number(url.searchParams.get("price_min") || 0), priceMax = Number(url.searchParams.get("price_max") || 0);
+  if (![priceMin, priceMax].every((value) => Number.isFinite(value) && value >= 0 && value <= 10_000_000) || (priceMin && priceMax && priceMin >= priceMax)) throw new HttpError("price is invalid");
+  const amenities = url.searchParams.getAll("amenity");
+  if (amenities.length > AMENITY_CHOICES.length || amenities.some((value) => !(AMENITY_CHOICES as readonly string[]).includes(value))) throw new HttpError("amenity is invalid");
   return {
     mode, start, end, guests,
     yachtType: (url.searchParams.get("type") || "").trim().toLowerCase(),
     experience: (url.searchParams.get("experience") || "").trim().toLowerCase(),
-    durationMin, durationMax, cursor: decodeSearchCursor(url.searchParams.get("cursor")),
+    durationMin, durationMax, priceMin, priceMax, amenities: [...new Set(amenities)], cursor: decodeSearchCursor(url.searchParams.get("cursor")),
   };
 }
 
 function searchQuery(params: SearchParams, timestamp: string): { sql: string; values: unknown[] } {
   const fields = `y.id,y.name,y.type,y.private_enabled,y.shared_enabled,y.guests,y.cabins,y.length_m,
-    y.description,y.image,y.private_rate,y.shared_rate,y.amenities_json,y.rating,y.reviews,COALESCE(y.rating,0) rating_sort`;
+    y.description,y.image,y.private_rate,y.private_rate_public,y.private_instant_booking,y.private_min_nights,y.private_max_nights,
+    y.shared_rate,y.amenities_json,y.rating,y.reviews,COALESCE(y.rating,0) rating_sort`;
   const cursorSql = params.cursor ? "WHERE (rating_sort<? OR (rating_sort=? AND id<?))" : "";
   const cursorValues = params.cursor ? [params.cursor.rating, params.cursor.rating, params.cursor.id] : [];
   if (params.mode === "private") {
@@ -354,6 +438,16 @@ function searchQuery(params: SearchParams, timestamp: string): { sql: string; va
     const values: unknown[] = [params.guests];
     if (params.yachtType) { clauses.push("LOWER(y.type)=?"); values.push(params.yachtType); }
     if (params.experience) { clauses.push("EXISTS (SELECT 1 FROM json_each(y.experiences_json) e WHERE LOWER(CAST(e.value AS TEXT))=?)"); values.push(params.experience); }
+    if (params.priceMin || params.priceMax) {
+      clauses.push("y.private_rate_public=1", "y.private_rate>0");
+      if (params.priceMin) { clauses.push("y.private_rate>=?"); values.push(params.priceMin); }
+      if (params.priceMax) { clauses.push("y.private_rate<?"); values.push(params.priceMax); }
+    }
+    for (const amenity of params.amenities) {
+      const aliases = AMENITY_ALIASES[amenity];
+      clauses.push(`EXISTS (SELECT 1 FROM json_each(y.amenities_json) a WHERE LOWER(TRIM(CAST(a.value AS TEXT))) IN (${aliases.map(() => "?").join(",")}))`);
+      values.push(...aliases);
+    }
     if (params.start && params.end) {
       clauses.push(`NOT EXISTS (SELECT 1 FROM availability_holds h
         WHERE h.yacht_id=y.id AND h.status='active' AND h.departure_id IS NULL
@@ -378,6 +472,13 @@ function searchQuery(params: SearchParams, timestamp: string): { sql: string; va
   const yachtValues: unknown[] = [];
   if (params.yachtType) { yachtClauses.push("LOWER(y.type)=?"); yachtValues.push(params.yachtType); }
   if (params.experience) { yachtClauses.push("EXISTS (SELECT 1 FROM json_each(y.experiences_json) e WHERE LOWER(CAST(e.value AS TEXT))=?)"); yachtValues.push(params.experience); }
+  for (const amenity of params.amenities) {
+    const aliases = AMENITY_ALIASES[amenity];
+    yachtClauses.push(`EXISTS (SELECT 1 FROM json_each(y.amenities_json) a WHERE LOWER(TRIM(CAST(a.value AS TEXT))) IN (${aliases.map(() => "?").join(",")}))`);
+    yachtValues.push(...aliases);
+  }
+  if (params.priceMin) { departureClauses.push("d.price_pp>=?"); departureValues.push(params.priceMin); }
+  if (params.priceMax) { departureClauses.push("d.price_pp<?"); departureValues.push(params.priceMax); }
   return {
     sql: `WITH active_holds AS (
         SELECT departure_id,SUM(units) reserved_places,SUM(cabin_units) reserved_cabins
@@ -391,6 +492,7 @@ function searchQuery(params: SearchParams, timestamp: string): { sql: string; va
       ), candidate AS (
         SELECT ${fields},json_group_array(json_object(
           'id',d.id,'title',d.title,'start_date',d.start_date,'end_date',d.end_date,'nights',d.nights,
+          'embarkation',d.embarkation,'disembarkation',d.disembarkation,'itinerary',json(d.itinerary_json),
           'cabins_available',d.cabins_available,'places_available',d.places_available,'price_pp',d.price_pp,
           'mock_generated',d.mock_generated,'places_remaining',d.places_remaining,
           'cabins_remaining',d.cabins_remaining,'available_units',d.places_remaining
@@ -438,7 +540,7 @@ async function searchApi(request: Request, env: Env, ctx: ExecutionContext, url:
   const found = result.results.filter((item) => item.id != null);
   const page = found.slice(0, SEARCH_PAGE_SIZE);
   const items = page.map((item) => {
-    const parsed = row(item) as DbRow;
+    const parsed = publicYacht(row(item) as DbRow);
     delete parsed.total_count; delete parsed.rating_sort;
     return parsed;
   });
@@ -478,11 +580,17 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
       ],
     });
   }
+  if (path === "/api/booking-config") return json({
+    conditions_version:await setting(env,"booking_conditions_version","2026-09-17"),
+    conditions_intro:await setting(env,"booking_conditions_intro",""),
+    best_price_guarantee_enabled:(await setting(env,"best_price_guarantee_enabled","0"))==="1",
+    best_price_guarantee_text:await setting(env,"best_price_guarantee_text","")
+  });
   if (path === "/api/search") return searchApi(request, env, ctx, url);
   if (path === "/api/search/options") {
     const database: D1Database | D1DatabaseSession = anonymousRequest(request) ? env.DB.withSession("first-unconstrained") : env.DB;
-    const result = await database.prepare("SELECT DISTINCT type FROM yachts WHERE status='live' AND verified=1 AND private_enabled=1 AND type<>'' ORDER BY type").all<{ type: string }>();
-    return json({ types: result.results.map((item) => item.type) });
+    const result = await database.prepare("SELECT DISTINCT type FROM yachts WHERE status='live' AND verified=1 AND (private_enabled=1 OR shared_enabled=1) AND type<>'' ORDER BY type").all<{ type: string }>();
+    return json({ types: result.results.map((item) => item.type), amenities: AMENITY_CHOICES });
   }
   if (path === "/api/auth/me") {
     const actor = await userFor(request, env);
@@ -505,6 +613,8 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
     if (query) { clauses.push("(name LIKE ? OR type LIKE ? OR description LIKE ?)"); values.push(`%${query}%`, `%${query}%`, `%${query}%`); }
     const result = await env.DB.prepare(`SELECT * FROM yachts${clauses.length ? ` WHERE ${clauses.join(" AND ")}` : ""} ORDER BY verified DESC,rating DESC,id DESC`).bind(...values).all<DbRow>();
     const yachts = rows(result);
+    if (actor?.role === "admin" || actor?.role === "vendor") await Promise.all(yachts.map(async (item) => { item.cabin_types = await cabinTypesFor(env, item.id); }));
+    if (!(actor?.role === "admin" || actor?.role === "vendor")) yachts.forEach(publicYacht);
     const mode = (url.searchParams.get("mode") || "").toLowerCase();
     if (!mode) return json(yachts);
     if (!["private", "shared"].includes(mode)) throw new HttpError("mode must be private or shared");
@@ -552,6 +662,7 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
     const allDepartures = await departuresFor(env, yachtMatch[1], true);
     const availableMonths = [...new Set(allDepartures.map((item) => String(item.start_date || "").slice(0, 7)).filter((value) => /^\d{4}-(0[1-9]|1[0-2])$/.test(value)))];
     yacht.departures = month ? allDepartures.filter((item) => String(item.start_date || "").startsWith(`${month}-`)) : allDepartures;
+    yacht.cabin_types = await cabinTypesFor(env, yachtMatch[1]);
     yacht.available_months = availableMonths;
     yacht.departure_meta = {
       selected_month: month || null,
@@ -559,6 +670,7 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
       returned: (yacht.departures as unknown[]).length,
       next_available_month: availableMonths.find((value) => value >= now().slice(0, 7)) || availableMonths[0] || null,
     };
+    if (!(actor?.role === "admin" || (actor?.role === "vendor" && actor.vendor_id === yacht.vendor_id))) publicYacht(yacht);
     return json(yacht);
   }
   const availabilityMatch = path.match(/^\/api\/yachts\/(\d+)\/availability$/);
@@ -573,7 +685,9 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
       FROM bookings b JOIN yachts y ON y.id=b.yacht_id LEFT JOIN departures d ON d.id=b.departure_id`;
     const values: unknown[] = [];
     if (actor.role === "vendor") { sql += " WHERE y.vendor_id=?"; values.push(actor.vendor_id); }
-    return json(rows(await env.DB.prepare(`${sql} ORDER BY b.id DESC`).bind(...values).all<DbRow>()));
+    const bookings=rows(await env.DB.prepare(`${sql} ORDER BY b.id DESC`).bind(...values).all<DbRow>());
+    await Promise.all(bookings.map(async booking=>{booking.travelers=rows(await env.DB.prepare("SELECT * FROM booking_guests WHERE booking_id=? ORDER BY sort_order,id").bind(booking.id).all<DbRow>());}));
+    return json(bookings);
   }
   if (path === "/api/departures") {
     const actor = await requireRole(request, env, ["vendor", "admin"]);
@@ -587,7 +701,7 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
       COALESCE(SUM(CASE WHEN h.status='active' AND h.expires_at>? THEN h.cabin_units ELSE 0 END),0) reserved_cabins
       FROM departures d JOIN yachts y ON y.id=d.yacht_id LEFT JOIN availability_holds h ON h.departure_id=d.id${clauses.length ? ` WHERE ${clauses.join(" AND ")}` : ""}
       GROUP BY d.id ORDER BY d.start_date DESC,d.id DESC`).bind(now(), now(), ...values).all<DbRow>());
-    return json(found.map(joinedDeparture));
+    const output = found.map(joinedDeparture); await Promise.all(output.map(async (item) => { item.cabin_inventory = await cabinInventoryFor(env,item.id); })); return json(output);
   }
   const bookingMatch = path.match(/^\/api\/bookings\/(\d+)$/);
   if (bookingMatch) {
@@ -597,6 +711,8 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
     if (actor.role === "vendor" && actor.vendor_id !== booking.vendor_id) throw new HttpError("Forbidden", 403);
     booking.payments = (await env.DB.prepare("SELECT * FROM payments WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>()).results.map(safePayment);
     booking.refunds = rows(await env.DB.prepare("SELECT * FROM refunds WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>());
+    booking.cabin_items = rows(await env.DB.prepare("SELECT * FROM booking_cabin_items WHERE booking_id=? ORDER BY id").bind(bookingMatch[1]).all<DbRow>());
+    booking.travelers = rows(await env.DB.prepare("SELECT * FROM booking_guests WHERE booking_id=? ORDER BY sort_order,id").bind(bookingMatch[1]).all<DbRow>());
     return json(booking);
   }
   if (path === "/api/payments") {
@@ -715,7 +831,9 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const prior = row(await env.DB.prepare("SELECT * FROM bookings WHERE idempotency_key=?").bind(idempotencyKey).first<DbRow>());
     if (prior) return json({ id: prior.id, booking_ref: prior.booking_ref, status: prior.status, total_amount: prior.total_amount, deposit_percent: prior.deposit_percent, deposit_amount: prior.deposit_amount, balance_due: prior.balance_due, currency: prior.currency, hold_expires_at: prior.expires_at, booking_token: idempotencyToken }, 200);
     const selection = await bookingSelection(env, data);
-    const { yacht, departureId, mode, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, currency } = selection;
+    const conditionsVersion=await setting(env,"booking_conditions_version","2026-09-17");
+    if(!bool(data.conditions_accepted)||String(data.conditions_version||"")!==conditionsVersion)throw new HttpError("Please review and accept the current booking conditions",409);
+    const { yacht, departureId, mode, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, currency, cabinSelections } = selection;
     const guestName = textField(data, "guest_name", 120, true), email = emailField(data);
     const phone = textField(data, "phone", 40) || null, notes = textField(data, "notes", 2_000) || null;
     const refBytes = crypto.getRandomValues(new Uint8Array(8));
@@ -723,13 +841,22 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const expires = new Date(Date.now() + Number(await setting(env, "hold_minutes", "30")) * 60_000).toISOString();
     const actor = await userFor(request, env);
     try {
-      await env.DB.batch([
+      const statements = [
         env.DB.prepare(`INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at,access_token_hash,idempotency_key)
           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?, ?,?,?)`).bind(ref, yacht.id, departureId, mode, guestName, email, phone, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, total, currency, notes, expires, timestamp, timestamp, idempotencyKey, idempotencyKey),
         env.DB.prepare("INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) SELECT id,?,?,?,?,?,?,?,'active',? FROM bookings WHERE booking_ref=?").bind(yacht.id, departureId, start, end, mode === "shared" ? guests : 1, cabinsBooked, expires, timestamp, ref),
         env.DB.prepare("INSERT INTO notifications(vendor_id,booking_id,channel,subject,body,status,created_at,sent_at) SELECT ?,id,'in_app','New booking request',?,'sent',?,? FROM bookings WHERE booking_ref=?").bind(yacht.vendor_id, `New ${mode} booking request ${ref} for ${yacht.name}.`, timestamp, timestamp, ref),
+        env.DB.prepare("UPDATE bookings SET conditions_version=?,conditions_snapshot_json=?,conditions_accepted_at=? WHERE booking_ref=?").bind(conditionsVersion,JSON.stringify({version:conditionsVersion,platform:await setting(env,"booking_conditions_intro",""),departure:selection.departure?.booking_conditions||{}}),timestamp,ref),
         env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) SELECT ?,?,'create','booking',CAST(id AS TEXT),?,? FROM bookings WHERE booking_ref=?").bind(actor?.id || null, actor?.role || "guest", JSON.stringify({ ref, total }), timestamp, ref)
-      ]);
+      ];
+      for (const item of cabinSelections) {
+        statements.push(env.DB.prepare(`INSERT INTO booking_cabin_items(booking_id,cabin_type_id,cabin_type_name,cabins,guests,capacity,price_pp,list_price_pp,occupancy_preference,discount_amount,surcharge_amount,inventory_units,line_total)
+          SELECT id,?,?,?,?,?,?,?,?,?,?,?,? FROM bookings WHERE booking_ref=?`).bind(item.cabin_type_id,item.cabin_type_name,item.cabins,item.guests,item.capacity,item.price_pp,item.list_price_pp,item.occupancy_preference,item.discount_amount,item.surcharge_amount,item.inventory_units,item.line_total,ref));
+        statements.push(env.DB.prepare(`INSERT INTO availability_hold_cabin_items(hold_id,departure_id,cabin_type_id,cabins,inventory_units)
+          SELECT h.id,?,?,?,? FROM availability_holds h JOIN bookings b ON b.id=h.booking_id WHERE b.booking_ref=?`).bind(departureId,item.cabin_type_id,item.cabins,item.inventory_units,ref));
+      }
+      if(Array.isArray(data.travelers))for(const [index,rawTraveler] of data.travelers.slice(0,guests).entries()){if(!rawTraveler||typeof rawTraveler!=="object"||Array.isArray(rawTraveler))continue;const traveler=rawTraveler as DbRow;statements.push(env.DB.prepare("INSERT INTO booking_guests(booking_id,full_name,rooming_preference,notes,sort_order) SELECT id,?,?,?,? FROM bookings WHERE booking_ref=?").bind(textField(traveler,"full_name",120)||null,textField(traveler,"rooming_preference",80)||null,textField(traveler,"notes",500)||null,index,ref));}
+      await env.DB.batch(statements);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (/inventory unavailable|UNIQUE constraint/i.test(message)) throw new HttpError("This inventory was just reserved by another guest", 409);
@@ -745,9 +872,11 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const idempotencyKey = await sha256(idempotencyToken);
     const existing = row(await env.DB.prepare("SELECT * FROM payments WHERE idempotency_key=?").bind(idempotencyKey).first<DbRow>());
     if (existing) return json({ payment_id: existing.id, checkout_url: `${existing.checkout_url}&payment_id=${existing.id}&payment_token=${encodeURIComponent(idempotencyToken)}`, provider_reference: existing.provider_reference, status: existing.status, gross_amount: existing.amount }, 200);
-    const booking = row(await env.DB.prepare("SELECT b.*,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?").bind(data.booking_id).first<DbRow>());
+    const booking = row(await env.DB.prepare("SELECT b.*,y.vendor_id,y.private_rate_public,y.private_instant_booking FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?").bind(data.booking_id).first<DbRow>());
     if (!booking) throw new HttpError("Booking not found", 404);
     if (!(await canAccessBooking(request, env, booking))) throw new HttpError("Booking not found", 404);
+    if (Number(booking.total_amount || 0) <= 0) throw new HttpError("A zero-value booking cannot be paid", 409);
+    if (booking.mode === "private" && (!booking.private_rate_public || !booking.private_instant_booking)) throw new HttpError("This private charter is enquiry-only", 409);
     if (["declined", "cancelled", "completed"].includes(String(booking.status))) throw new HttpError("Booking is not payable", 409);
     if (booking.status !== "confirmed" && String(booking.expires_at || "") <= timestamp) throw new HttpError("The availability hold has expired", 409);
     await syncBooking(env, booking.id);
@@ -782,12 +911,16 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
   }
   if (path === "/api/enquiries") {
     const yachtId = numberField(data, "yacht_id", { integer: true, minimum: 1, required: true });
-    const yacht = await env.DB.prepare("SELECT 1 FROM yachts WHERE id=? AND status='live' AND verified=1").bind(yachtId).first();
+    const yacht = row(await env.DB.prepare("SELECT * FROM yachts WHERE id=? AND status='live' AND verified=1 AND private_enabled=1").bind(yachtId).first<DbRow>());
     if (!yacht) throw new HttpError("Yacht not found", 404);
     const guestName = textField(data, "guest_name", 120, true), email = emailField(data);
-    const guests = numberField(data, "guests", { integer: true, minimum: 1, maximum: 200 });
+    const guests = numberField(data, "guests", { integer: true, minimum: 1, maximum: 200, required: true }) as number;
     const experience = textField(data, "experience", 120) || null, message = textField(data, "message", 2_000) || null;
-    const insert = await env.DB.prepare("INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,status,created_at) VALUES(?,?,?,?,?,?, 'new',?)").bind(yachtId, guestName, email, guests, experience, message, timestamp).run();
+    const start = textField(data, "start_date", 10, true), end = textField(data, "end_date", 10, true);
+    if (!validDates(start, end) || start < now().slice(0, 10)) throw new HttpError("Valid future start_date and end_date are required");
+    enforcePrivateNightLimits(yacht, dateNights(start, end));
+    if (guests > Number(yacht.guests || 0)) throw new HttpError("Guest count exceeds yacht capacity");
+    const insert = await env.DB.prepare("INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,start_date,end_date,status,created_at) VALUES(?,?,?,?,?,?,?,?, 'new',?)").bind(yachtId, guestName, email, guests, experience, message, start, end, timestamp).run();
     return json({ id: insert.meta.last_row_id }, 201);
   }
   if (path === "/api/yachts") {
@@ -801,14 +934,15 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const cabins = numberField(data, "cabins", { integer: true, minimum: 1, maximum: 100, required: true });
     const crew = numberField(data, "crew", { integer: true, minimum: 0, maximum: 100 }) ?? 0;
     const length = numberField(data, "length_m", { minimum: 0, maximum: 300 }) ?? 0;
-    const privateRate = numberField(data, "private_rate", { minimum: 0, maximum: 10_000_000 });
+    const private = privateSettings(data);
+    const privateRate = private.rate;
     const sharedRate = numberField(data, "shared_rate", { minimum: 0, maximum: 1_000_000 });
     const description = textField(data, "description", 10_000) || null, image = urlField(data, "image");
     const amenities = stringList(data, "amenities"), experiences = stringList(data, "experiences");
     const gallery = stringList(data, "gallery", 100); for (const value of gallery) { try { if (new URL(value).protocol !== "https:") throw new Error(); } catch { throw new HttpError("gallery must contain HTTPS URLs"); } }
     const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-    const insert = await env.DB.prepare(`INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, name, slug, type, status, Number(privateEnabled), Number(sharedEnabled), guests, cabins, crew, length, numberField(data, "year_built", { integer: true, minimum: 1800, maximum: 2200 }), numberField(data, "year_refit", { integer: true, minimum: 1800, maximum: 2200 }), description, image, privateRate, sharedRate, JSON.stringify(amenities), JSON.stringify(experiences), JSON.stringify(gallery), timestamp).run();
+    const insert = await env.DB.prepare(`INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,private_rate_public,private_instant_booking,private_min_nights,private_max_nights,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, name, slug, type, status, Number(privateEnabled), Number(sharedEnabled), guests, cabins, crew, length, numberField(data, "year_built", { integer: true, minimum: 1800, maximum: 2200 }), numberField(data, "year_refit", { integer: true, minimum: 1800, maximum: 2200 }), description, image, privateRate, Number(private.ratePublic), Number(private.instantBooking), private.minNights, private.maxNights, sharedRate, JSON.stringify(amenities), JSON.stringify(experiences), JSON.stringify(gallery), timestamp).run();
     await audit(env, actor, "create", "yacht", insert.meta.last_row_id, { name }); return json({ id: insert.meta.last_row_id }, 201);
   }
   const newDeparture = path.match(/^\/api\/yachts\/(\d+)\/departures$/);
@@ -818,8 +952,23 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     if (actor.role === "vendor" && yacht.vendor_id !== actor.vendor_id) throw new HttpError("Forbidden", 403);
     if (!yacht.shared_enabled) throw new HttpError("Yacht must have Liveaboard enabled");
     validateDeparture(data);
-    const insert = await env.DB.prepare("INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status,mock_generated) VALUES(?,?,?,?,?,?,?,?,?,?,?,0)").bind(newDeparture[1], data.title, data.start_date, data.end_date, data.nights, data.cabins_total, data.cabins_available, data.places_total, data.places_available, data.price_pp, data.status || "open").run();
+    const itinerary = itineraryField(data.itinerary), embarkation = textField(data, "embarkation", 160) || null, disembarkation = textField(data, "disembarkation", 160) || null, bookingConditions=data.booking_conditions&&typeof data.booking_conditions==="object"&&!Array.isArray(data.booking_conditions)?data.booking_conditions:{};
+    const insert = await env.DB.prepare("INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status,mock_generated,embarkation,disembarkation,itinerary_json,booking_conditions_json) VALUES(?,?,?,?,?,?,?,?,?,?,?,0,?,?,?,?)").bind(newDeparture[1], data.title, data.start_date, data.end_date, data.nights, data.cabins_total, data.cabins_available, data.places_total, data.places_available, data.price_pp, data.status || "open", embarkation, disembarkation, JSON.stringify(itinerary),JSON.stringify(bookingConditions)).run();
+    if (Array.isArray(data.cabin_inventory)) {
+      const statements: D1PreparedStatement[] = [];
+      for (const rawItem of data.cabin_inventory) { const item = rawItem as DbRow, typeId = numberField(item, "cabin_type_id", { integer: true, minimum: 1, required: true }), total = numberField(item, "cabins_total", { integer: true, minimum: 0, required: true }), available = numberField(item, "cabins_available", { integer: true, minimum: 0, required: true }), price = numberField(item, "price_pp", { minimum: 0, required: true }),list=numberField(item,"list_price_pp",{minimum:0})??price,low=numberField(item,"low_stock_threshold",{integer:true,minimum:0})??4,single=numberField(item,"single_occupancy_surcharge_percent",{minimum:0,maximum:500})??0,privacy=numberField(item,"privacy_surcharge_percent",{minimum:0,maximum:500})??0; if (Number(available)>Number(total)) throw new HttpError("Cabin category availability cannot exceed its total"); statements.push(env.DB.prepare("INSERT INTO departure_cabin_inventory(departure_id,cabin_type_id,cabins_total,cabins_available,price_pp,list_price_pp,promotion_label,promotion_starts_at,promotion_ends_at,low_stock_threshold,single_occupancy_surcharge_percent,privacy_surcharge_percent) SELECT ?,?,?,?,?,?,?,?,?,?,?,? WHERE EXISTS(SELECT 1 FROM yacht_cabin_types WHERE id=? AND yacht_id=?)").bind(insert.meta.last_row_id,typeId,total,available,price,list,textField(item,"promotion_label",80)||null,textField(item,"promotion_starts_at",40)||null,textField(item,"promotion_ends_at",40)||null,low,single,privacy,typeId,newDeparture[1])); }
+      if (statements.length) await env.DB.batch(statements);
+    }
     await audit(env, actor, "create", "departure", insert.meta.last_row_id, { yacht_id: newDeparture[1] }); return json({ id: insert.meta.last_row_id }, 201);
+  }
+  const newCabinType = path.match(/^\/api\/yachts\/(\d+)\/cabin-types$/);
+  if (newCabinType) {
+    const actor = await requireRole(request, env, ["vendor", "admin"]), yacht = row(await env.DB.prepare("SELECT vendor_id FROM yachts WHERE id=?").bind(newCabinType[1]).first<DbRow>());
+    if (!yacht || (actor.role === "vendor" && yacht.vendor_id !== actor.vendor_id)) throw new HttpError("Yacht not found", 404);
+    const name = textField(data,"name",120,true), capacity = numberField(data,"capacity",{integer:true,minimum:1,maximum:20,required:true});
+    const gallery=stringList(data,"gallery",30),modes=Array.isArray(data.occupancy_modes)?data.occupancy_modes.map(String).filter(x=>["shared","private"].includes(x)):[];
+    const insert = await env.DB.prepare("INSERT INTO yacht_cabin_types(yacht_id,name,deck,bed_configuration,description,image,gallery_json,window_type,air_conditioning,ensuite,occupancy_modes_json,capacity,sort_order,active,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)").bind(newCabinType[1],name,textField(data,"deck",80)||null,textField(data,"bed_configuration",120)||null,textField(data,"description",1000)||null,urlField(data,"image"),JSON.stringify(gallery),textField(data,"window_type",80)||null,Number(bool(data.air_conditioning)),Number(bool(data.ensuite)),JSON.stringify(modes.length?modes:["private"]),capacity,numberField(data,"sort_order",{integer:true,minimum:0,maximum:1000})||0,timestamp,timestamp).run();
+    await audit(env,actor,"create","cabin_type",insert.meta.last_row_id,{yacht_id:newCabinType[1]});return json({id:insert.meta.last_row_id},201);
   }
   if (path === "/api/vendor/documents") {
     const actor = await requireRole(request, env, ["vendor", "admin"]), vendorId = actor.vendor_id || data.vendor_id;
@@ -894,11 +1043,26 @@ function validateDeparture(data: DbRow): void {
   if (Number(data.cabins_available) > Number(data.cabins_total)) throw new HttpError("Available cabins cannot exceed total cabins");
   if (Number(data.places_available) > Number(data.places_total)) throw new HttpError("Available places cannot exceed total places");
 }
+function itineraryField(value: unknown): DbRow[] {
+  if (value == null || value === "") return [];
+  if (!Array.isArray(value) || value.length > 40) throw new HttpError("itinerary must be an array of days");
+  const days = value.map((raw, index) => {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) throw new HttpError("itinerary day is invalid");
+    const item = raw as DbRow, day = Number(item.day), title = String(item.title || "").trim(), description = String(item.description || "").trim();
+    if (!Number.isInteger(day) || day < 1 || day > 100 || !title || title.length > 160 || description.length > 2_000) throw new HttpError(`itinerary day ${index + 1} is invalid`);
+    if (!Array.isArray(item.locations) || item.locations.length > 20) throw new HttpError(`itinerary day ${index + 1} locations are invalid`);
+    const locations = item.locations.map((location) => String(location).trim()).filter(Boolean);
+    if (locations.some((location) => location.length > 120)) throw new HttpError(`itinerary day ${index + 1} locations are invalid`);
+    return { day, title, locations, description };
+  });
+  if (new Set(days.map((item) => item.day)).size !== days.length) throw new HttpError("itinerary day numbers must be unique");
+  return days.sort((a, b) => Number(a.day) - Number(b.day));
+}
 
 async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
   const data = await body(request), path = url.pathname, timestamp = now();
   if (path === "/api/admin/settings") {
-    const actor = await requireRole(request, env, ["admin"]), ranges: Record<string, [number, number] | null> = { commission_rate: [0, 100], deposit_percent: [0, 100], hold_minutes: [5, 1440], currency: null }, changed: DbRow = {};
+    const actor = await requireRole(request, env, ["admin"]), ranges: Record<string, [number, number] | null> = { commission_rate: [0, 100], deposit_percent: [0, 100], hold_minutes: [5, 1440], currency: null,booking_conditions_version:null,booking_conditions_intro:null,best_price_guarantee_enabled:null,best_price_guarantee_text:null }, changed: DbRow = {};
     const statements: D1PreparedStatement[] = [];
     for (const [key, value] of Object.entries(data)) {
       if (!(key in ranges)) throw new HttpError(`Unknown setting: ${key}`); const range = ranges[key];
@@ -907,6 +1071,15 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
       changed[key] = value; statements.push(env.DB.prepare("INSERT INTO platform_settings(key,value,updated_at) VALUES(?,?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value,updated_at=excluded.updated_at").bind(key, String(value), timestamp));
     }
     if (statements.length) await env.DB.batch(statements); await audit(env, actor, "settings_update", "platform_settings", null, changed); return json({ ok: true, ...changed });
+  }
+  const cabinTypeMatch = path.match(/^\/api\/cabin-types\/(\d+)$/);
+  if (cabinTypeMatch) {
+    const actor = await requireRole(request,env,["vendor","admin"]), current = row(await env.DB.prepare("SELECT c.*,y.vendor_id FROM yacht_cabin_types c JOIN yachts y ON y.id=c.yacht_id WHERE c.id=?").bind(cabinTypeMatch[1]).first<DbRow>());
+    if (!current || (actor.role === "vendor" && current.vendor_id !== actor.vendor_id)) throw new HttpError("Cabin type not found",404);
+    const merged={...current,...data}, name=textField(merged,"name",120,true), capacity=numberField(merged,"capacity",{integer:true,minimum:1,maximum:20,required:true});
+    const gallery=Array.isArray(merged.gallery)?merged.gallery.map(String).slice(0,30):[],modes=Array.isArray(merged.occupancy_modes)?merged.occupancy_modes.map(String).filter(x=>["shared","private"].includes(x)):[];
+    await env.DB.prepare("UPDATE yacht_cabin_types SET name=?,deck=?,bed_configuration=?,description=?,image=?,gallery_json=?,window_type=?,air_conditioning=?,ensuite=?,occupancy_modes_json=?,capacity=?,sort_order=?,active=?,updated_at=? WHERE id=?").bind(name,textField(merged,"deck",80)||null,textField(merged,"bed_configuration",120)||null,textField(merged,"description",1000)||null,urlField(merged,"image"),JSON.stringify(gallery),textField(merged,"window_type",80)||null,Number(bool(merged.air_conditioning)),Number(bool(merged.ensuite)),JSON.stringify(modes.length?modes:["private"]),capacity,numberField(merged,"sort_order",{integer:true,minimum:0,maximum:1000})||0,Number("active" in data?bool(data.active):bool(current.active)),timestamp,cabinTypeMatch[1]).run();
+    await audit(env,actor,"update","cabin_type",cabinTypeMatch[1],{fields:Object.keys(data)});return json({ok:true});
   }
   for (const [pattern, roles, sql, action] of [
     [/^\/api\/admin\/vendors\/(\d+)$/, ["admin"], "UPDATE vendors SET verified=?,status=?,updated_at=? WHERE id=?", "vendor_verification"],
@@ -942,12 +1115,17 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     for (const field of ["guests", "cabins", "crew"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: field === "guests" || field === "cabins" ? 1 : 0, maximum: 200, required: true });
     for (const field of ["year_built", "year_refit"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: 1800, maximum: 2200 });
     if ("length_m" in data) data.length_m = numberField(data, "length_m", { minimum: 0, maximum: 300, required: true });
+    const private = privateSettings(data, yacht);
     for (const field of ["private_rate", "shared_rate"]) if (field in data) data[field] = numberField(data, field, { minimum: 0, maximum: 10_000_000 });
+    if ("private_rate_public" in data) data.private_rate_public = Number(private.ratePublic);
+    if ("private_instant_booking" in data) data.private_instant_booking = Number(private.instantBooking);
+    if ("private_min_nights" in data) data.private_min_nights = private.minNights;
+    if ("private_max_nights" in data) data.private_max_nights = private.maxNights;
     if ("description" in data) data.description = textField(data, "description", 10_000);
     if ("image" in data) data.image = urlField(data, "image");
     for (const field of ["amenities", "experiences"]) if (field in data) data[field] = stringList(data, field);
     if ("gallery" in data) { const gallery = stringList(data, "gallery", 100); for (const value of gallery) { try { if (new URL(value).protocol !== "https:") throw new Error(); } catch { throw new HttpError("gallery must contain HTTPS URLs"); } } data.gallery = gallery; }
-    const allowed = ["name", "type", "status", "private_enabled", "shared_enabled", "guests", "cabins", "crew", "length_m", "year_built", "year_refit", "description", "image", "private_rate", "shared_rate"];
+    const allowed = ["name", "type", "status", "private_enabled", "shared_enabled", "guests", "cabins", "crew", "length_m", "year_built", "year_refit", "description", "image", "private_rate", "private_rate_public", "private_instant_booking", "private_min_nights", "private_max_nights", "shared_rate"];
     const sets: string[] = [], values: unknown[] = [];
     for (const field of allowed) if (field in data) { sets.push(`${field}=?`); values.push(field === "private_enabled" ? Number(privateEnabled) : field === "shared_enabled" ? Number(sharedEnabled) : data[field]); }
     for (const field of ["amenities", "experiences", "gallery"]) if (field in data) { sets.push(`${field}_json=?`); values.push(JSON.stringify(data[field])); }
@@ -961,7 +1139,11 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     const merged = { ...current, ...data }; validateDeparture(merged);
     const reserved = await env.DB.prepare("SELECT COALESCE(SUM(units),0) places,COALESCE(SUM(cabin_units),0) cabins FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?").bind(departureMatch[1], timestamp).first<DbRow>();
     if (Number(merged.places_available) < Number(reserved?.places || 0) || Number(merged.cabins_available) < Number(reserved?.cabins || 0)) throw new HttpError("Inventory cannot be reduced below active reservations", 409);
-    await env.DB.prepare("UPDATE departures SET title=?,start_date=?,end_date=?,nights=?,cabins_total=?,cabins_available=?,places_total=?,places_available=?,price_pp=?,status=? WHERE id=?").bind(merged.title, merged.start_date, merged.end_date, merged.nights, merged.cabins_total, merged.cabins_available, merged.places_total, merged.places_available, merged.price_pp, merged.status || "open", departureMatch[1]).run();
+    const itinerary = "itinerary" in data ? itineraryField(data.itinerary) : (Array.isArray(current.itinerary) ? current.itinerary : []);
+    const bookingConditions="booking_conditions" in data&&data.booking_conditions&&typeof data.booking_conditions==="object"&&!Array.isArray(data.booking_conditions)?data.booking_conditions:(current.booking_conditions||{});
+    const statements: D1PreparedStatement[] = [env.DB.prepare("UPDATE departures SET title=?,start_date=?,end_date=?,nights=?,cabins_total=?,cabins_available=?,places_total=?,places_available=?,price_pp=?,status=?,embarkation=?,disembarkation=?,itinerary_json=?,booking_conditions_json=? WHERE id=?").bind(merged.title, merged.start_date, merged.end_date, merged.nights, merged.cabins_total, merged.cabins_available, merged.places_total, merged.places_available, merged.price_pp, merged.status || "open",textField(merged,"embarkation",160)||null,textField(merged,"disembarkation",160)||null,JSON.stringify(itinerary),JSON.stringify(bookingConditions),departureMatch[1])];
+    if (Array.isArray(data.cabin_inventory)) for (const rawItem of data.cabin_inventory) { const item=rawItem as DbRow,typeId=numberField(item,"cabin_type_id",{integer:true,minimum:1,required:true}),total=numberField(item,"cabins_total",{integer:true,minimum:0,required:true}),available=numberField(item,"cabins_available",{integer:true,minimum:0,required:true}),price=numberField(item,"price_pp",{minimum:0,required:true}),list=numberField(item,"list_price_pp",{minimum:0})??price,low=numberField(item,"low_stock_threshold",{integer:true,minimum:0})??4,single=numberField(item,"single_occupancy_surcharge_percent",{minimum:0,maximum:500})??0,privacy=numberField(item,"privacy_surcharge_percent",{minimum:0,maximum:500})??0;if(Number(available)>Number(total))throw new HttpError("Cabin category availability cannot exceed its total");const held=await env.DB.prepare("SELECT COALESCE(SUM(CASE WHEN hi.inventory_units>0 THEN hi.inventory_units ELSE hi.cabins*c.capacity END),0) units,MAX(c.capacity) capacity FROM availability_hold_cabin_items hi JOIN availability_holds h ON h.id=hi.hold_id JOIN yacht_cabin_types c ON c.id=hi.cabin_type_id WHERE hi.departure_id=? AND hi.cabin_type_id=? AND h.status='active' AND h.expires_at>?").bind(departureMatch[1],typeId,timestamp).first<DbRow>();if(Number(available)*Number(held?.capacity||1)<Number(held?.units||0))throw new HttpError("Cabin category inventory cannot be reduced below active reservations",409);statements.push(env.DB.prepare("INSERT INTO departure_cabin_inventory(departure_id,cabin_type_id,cabins_total,cabins_available,price_pp,list_price_pp,promotion_label,promotion_starts_at,promotion_ends_at,low_stock_threshold,single_occupancy_surcharge_percent,privacy_surcharge_percent) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(departure_id,cabin_type_id) DO UPDATE SET cabins_total=excluded.cabins_total,cabins_available=excluded.cabins_available,price_pp=excluded.price_pp,list_price_pp=excluded.list_price_pp,promotion_label=excluded.promotion_label,promotion_starts_at=excluded.promotion_starts_at,promotion_ends_at=excluded.promotion_ends_at,low_stock_threshold=excluded.low_stock_threshold,single_occupancy_surcharge_percent=excluded.single_occupancy_surcharge_percent,privacy_surcharge_percent=excluded.privacy_surcharge_percent").bind(departureMatch[1],typeId,total,available,price,list,textField(item,"promotion_label",80)||null,textField(item,"promotion_starts_at",40)||null,textField(item,"promotion_ends_at",40)||null,low,single,privacy)); }
+    await env.DB.batch(statements);
     await audit(env, actor, "update", "departure", departureMatch[1], { fields: Object.keys(data) }); return json({ ok: true });
   }
   const bookingMatch = path.match(/^\/api\/bookings\/(\d+)$/);

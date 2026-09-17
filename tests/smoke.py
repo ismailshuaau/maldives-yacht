@@ -70,13 +70,17 @@ with tempfile.TemporaryDirectory() as td:
 
         shared=next(y for y in call(f'/api/yachts?status=live&mode=shared&start={today}&end={month_start(today,1)-timedelta(days=1)}&guests=2') if str(y.get('slug','')).startswith('liveaboard-'))
         dep=next(d for d in shared['matching_departures'] if d['mock_generated'])
-        shared_booking=call('/api/bookings','POST',{'yacht_id':shared['id'],'departure_id':dep['id'],'mode':'shared','guest_name':'Shared Smoke','email':'shared@example.com','guests':2,'cabins_booked':1})
+        shared_detail=call('/api/yachts/'+str(shared['id']))
+        dep_detail=next(d for d in shared_detail['departures'] if d['id']==dep['id'])
+        cabin=dep_detail['cabin_inventory'][0]
+        config=call('/api/booking-config')
+        shared_booking=call('/api/bookings','POST',{'yacht_id':shared['id'],'departure_id':dep['id'],'mode':'shared','guest_name':'Shared Smoke','email':'shared@example.com','guests':2,'cabin_selections':[{'cabin_type_id':cabin['cabin_type_id'],'guests':2,'occupancy_preference':'shared'}],'conditions_accepted':True,'conditions_version':config['conditions_version'],'travelers':[{'full_name':'Shared Smoke','rooming_preference':'travelling-together'},{'full_name':'','rooming_preference':'travelling-together'}]})
         assert shared_booking['total_amount']==round(dep['price_pp']*2,2)
 
         y=yachts[0]
         private_start=today+timedelta(days=120)
         private_end=private_start+timedelta(days=3)
-        b=call('/api/bookings','POST',{'yacht_id':y['id'],'mode':'private','guest_name':'Smoke Test','email':'smoke@example.com','guests':2,'start_date':str(private_start),'end_date':str(private_end)})
+        b=call('/api/bookings','POST',{'yacht_id':y['id'],'mode':'private','guest_name':'Smoke Test','email':'smoke@example.com','guests':2,'start_date':str(private_start),'end_date':str(private_end),'conditions_accepted':True,'conditions_version':config['conditions_version']})
         pay=call('/api/payments/create','POST',{'booking_id':b['id'],'payment_type':'deposit'},token)
         assert round(pay['commission_rate'],2)==30
         assert round(pay['commission_amount'],2)==round(pay['gross_amount']*.30,2)

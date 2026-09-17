@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Search yachts — MaldivesLiveaboardBooking</title><link rel="stylesheet" href="assets/app.css"></head>
+<body class="cataloguePage"><header class="top"><div class="wrap topnav"><a class="brand" href="index.html">MaldivesLiveaboardBooking<small>Maldives by yacht</small></a><nav><a href="index.html#search">New search</a><a href="index.html#experiences">Experiences</a><a class="btn ghost navCta" href="vendor.html">List your yacht</a></nav></div></header>
+<main>
+  <section class="catalogueSearchBar"><div class="wrap"><form id="coreSearch" class="catalogueCore">
+    <div class="control"><label for="mode">Booking mode</label><select id="mode" name="mode" data-native-select><option value="shared">Liveaboard</option><option value="private">Private charter</option></select></div>
+    <div id="monthControl" class="control"><label for="month">Travel month</label><input id="month" name="month" type="month"></div>
+    <div id="startControl" class="control" hidden><label for="start">Start date</label><input id="start" name="start" type="date"></div>
+    <div id="endControl" class="control" hidden><label for="end">End date</label><input id="end" name="end" type="date"></div>
+    <div class="control"><label for="guests">Guests</label><input id="guests" name="guests" type="number" min="1" max="200" value="2" required></div>
+    <button class="btn sea" type="submit">Search</button>
+  </form></div></section>
+  <div class="catalogueMobileActions"><button id="openSearch" class="btn ghost" type="button" aria-controls="coreSearch" aria-expanded="false">Search</button><button id="openFilters" class="btn ghost" type="button" aria-controls="filterPanel" aria-expanded="false">Filters <span id="filterCount"></span></button></div>
+  <div class="wrap catalogueLayout">
+    <aside id="filterPanel" class="catalogueFilters" aria-label="Search filters"><div class="drawerHead"><strong>Filters</strong><button id="closeFilters" type="button" aria-label="Close filters">×</button></div>
+      <div class="filterHeading"><h2>Filter results</h2><button id="clearFilters" type="button">Clear all</button></div>
+      <fieldset><legend id="priceLegend">Total price per person</legend><div id="priceOptions" class="filterOptions"></div></fieldset>
+      <fieldset id="durationGroup"><legend>Trip duration</legend><div class="filterOptions"><label><input type="radio" name="duration" value="">Any duration</label><label><input type="radio" name="duration" value="1-3">1–3 nights</label><label><input type="radio" name="duration" value="4-7">4–7 nights</label><label><input type="radio" name="duration" value="8-10">8–10 nights</label><label><input type="radio" name="duration" value="11+">11+ nights</label></div></fieldset>
+      <fieldset id="typeGroup" hidden><legend>Yacht type</legend><select id="type" data-native-select><option value="">Any yacht type</option></select></fieldset>
+      <fieldset><legend>Experience</legend><select id="experience" data-native-select><option value="">Any experience</option><option>Luxury escape</option><option>Diving</option><option>Surfing</option><option>Fishing</option><option>Honeymoon</option><option>Family holiday</option><option>Wellness &amp; spa</option><option>Adventure</option></select></fieldset>
+      <fieldset><legend>Amenities</legend><div id="amenityOptions" class="filterOptions"></div></fieldset>
+      <button id="filterDone" class="btn sea drawerDone" type="button">Done</button>
+    </aside>
+    <section class="catalogueResults" aria-labelledby="resultsTitle">
+      <div class="catalogueResultsHead"><div><p id="resultsEyebrow" class="eyebrow">Liveaboard catalogue</p><h1 id="resultsTitle">Maldives liveaboards</h1><p id="resultsCount" class="sub" aria-live="polite"></p></div></div>
+      <div id="activeChips" class="activeChips" aria-label="Active filters"></div>
+      <div id="catalogueLoading" class="catalogueLoading" role="status" hidden><span class="nauticalLoader" aria-hidden="true"><i></i><i></i><i></i></span>Finding the best matches…</div>
+      <div id="catalogueCards" class="catalogueCards" aria-busy="false"></div>
+      <div class="loadMoreWrap"><button id="catalogueLoadMore" class="btn ghost" type="button" hidden>Load more</button><p id="catalogueStatus" class="searchMessage" role="status"></p></div>
+    </section>
+  </div>
+</main>
+<script src="assets/app.js"></script><script src="assets/search.js"></script></body></html>

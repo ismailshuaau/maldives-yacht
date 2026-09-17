@@ -18,6 +18,15 @@ DB = Path(os.environ.get('ATOLLE_DB', ROOT / 'atolle.db'))
 SESSION_HOURS = int(os.environ.get('SESSION_HOURS', '24'))
 ENFORCE_AUTH = os.environ.get('ENFORCE_AUTH', '0') == '1'
 RATE_BUCKET = {}
+AMENITY_CHOICES=['Nitrox','Internet','Air-conditioned cabins','En-suite bathrooms','Jacuzzi','Family cabins','Spa','Snorkeller-friendly']
+AMENITY_ALIASES={
+    'Nitrox':{'nitrox'},'Internet':{'internet','wi-fi','wifi','wi fi'},
+    'Air-conditioned cabins':{'air-conditioned cabins','air conditioned cabins','air conditioning','air-conditioning','ac cabins'},
+    'En-suite bathrooms':{'en-suite bathrooms','ensuite bathrooms','en suite bathrooms','en-suite bathroom','ensuite'},
+    'Jacuzzi':{'jacuzzi','hot tub'},'Family cabins':{'family cabins','family cabin'},
+    'Spa':{'spa','wellness spa'},
+    'Snorkeller-friendly':{'snorkeller-friendly','snorkeler-friendly','snorkelling','snorkeling','snorkelling gear','snorkeling gear'},
+}
 
 
 def now_iso():
@@ -127,6 +136,10 @@ CREATE TABLE IF NOT EXISTS yachts(
  amenities_json TEXT DEFAULT '[]',
  experiences_json TEXT DEFAULT '[]',
  private_rate REAL,
+ private_rate_public INTEGER NOT NULL DEFAULT 0,
+ private_instant_booking INTEGER NOT NULL DEFAULT 0,
+ private_min_nights INTEGER,
+ private_max_nights INTEGER,
  shared_rate REAL,
  rating REAL DEFAULT 4.8,
  reviews INTEGER DEFAULT 0,
@@ -196,6 +209,11 @@ CREATE TABLE IF NOT EXISTS availability_holds(
  FOREIGN KEY(yacht_id) REFERENCES yachts(id),
  FOREIGN KEY(departure_id) REFERENCES departures(id)
 );
+CREATE TABLE IF NOT EXISTS yacht_cabin_types(id INTEGER PRIMARY KEY AUTOINCREMENT,yacht_id INTEGER NOT NULL,name TEXT NOT NULL,deck TEXT,bed_configuration TEXT,description TEXT,image TEXT,gallery_json TEXT NOT NULL DEFAULT '[]',window_type TEXT,air_conditioning INTEGER NOT NULL DEFAULT 0,ensuite INTEGER NOT NULL DEFAULT 0,occupancy_modes_json TEXT NOT NULL DEFAULT '["private"]',capacity INTEGER NOT NULL DEFAULT 2,sort_order INTEGER NOT NULL DEFAULT 0,active INTEGER NOT NULL DEFAULT 1,created_at TEXT,updated_at TEXT,FOREIGN KEY(yacht_id) REFERENCES yachts(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS departure_cabin_inventory(departure_id INTEGER NOT NULL,cabin_type_id INTEGER NOT NULL,cabins_total INTEGER NOT NULL,cabins_available INTEGER NOT NULL,price_pp REAL NOT NULL,list_price_pp REAL,promotion_label TEXT,promotion_starts_at TEXT,promotion_ends_at TEXT,low_stock_threshold INTEGER NOT NULL DEFAULT 4,single_occupancy_surcharge_percent REAL NOT NULL DEFAULT 0,privacy_surcharge_percent REAL NOT NULL DEFAULT 0,PRIMARY KEY(departure_id,cabin_type_id),FOREIGN KEY(departure_id) REFERENCES departures(id) ON DELETE CASCADE,FOREIGN KEY(cabin_type_id) REFERENCES yacht_cabin_types(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS booking_cabin_items(id INTEGER PRIMARY KEY AUTOINCREMENT,booking_id INTEGER NOT NULL,cabin_type_id INTEGER,cabin_type_name TEXT NOT NULL,cabins INTEGER NOT NULL,guests INTEGER NOT NULL,capacity INTEGER NOT NULL,price_pp REAL NOT NULL,list_price_pp REAL,occupancy_preference TEXT NOT NULL DEFAULT 'private',discount_amount REAL NOT NULL DEFAULT 0,surcharge_amount REAL NOT NULL DEFAULT 0,inventory_units INTEGER NOT NULL DEFAULT 0,line_total REAL NOT NULL,FOREIGN KEY(booking_id) REFERENCES bookings(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS availability_hold_cabin_items(id INTEGER PRIMARY KEY AUTOINCREMENT,hold_id INTEGER NOT NULL,departure_id INTEGER NOT NULL,cabin_type_id INTEGER NOT NULL,cabins INTEGER NOT NULL,inventory_units INTEGER NOT NULL DEFAULT 0,FOREIGN KEY(hold_id) REFERENCES availability_holds(id) ON DELETE CASCADE);
+CREATE TABLE IF NOT EXISTS booking_guests(id INTEGER PRIMARY KEY AUTOINCREMENT,booking_id INTEGER NOT NULL,full_name TEXT,rooming_preference TEXT,notes TEXT,sort_order INTEGER NOT NULL DEFAULT 0,FOREIGN KEY(booking_id) REFERENCES bookings(id) ON DELETE CASCADE);
 CREATE TABLE IF NOT EXISTS payments(
  id INTEGER PRIMARY KEY AUTOINCREMENT,
  booking_id INTEGER NOT NULL,
@@ -263,6 +281,8 @@ CREATE TABLE IF NOT EXISTS enquiries(
  guests INTEGER,
  experience TEXT,
  message TEXT,
+ start_date TEXT,
+ end_date TEXT,
  status TEXT DEFAULT 'new',
  created_at TEXT,
  FOREIGN KEY(yacht_id) REFERENCES yachts(id)
@@ -427,14 +447,19 @@ def init_db():
         ('payout_reference', 'TEXT'), ('status', "TEXT NOT NULL DEFAULT 'pending'"),
         ('created_at', 'TEXT'), ('updated_at', 'TEXT')]:
         add_col(c, 'vendors', name, ddl)
-    for name, ddl in [('slug','TEXT')]:
+    for name, ddl in [('slug','TEXT'),('private_rate_public','INTEGER NOT NULL DEFAULT 0'),
+                      ('private_instant_booking','INTEGER NOT NULL DEFAULT 0'),('private_min_nights','INTEGER'),
+                      ('private_max_nights','INTEGER')]:
         add_col(c, 'yachts', name, ddl)
+    for name, ddl in [('start_date','TEXT'),('end_date','TEXT')]:
+        add_col(c, 'enquiries', name, ddl)
     for name, ddl in [
         ('booking_ref','TEXT'), ('phone','TEXT'), ('nights','INTEGER'),
         ('cabins_booked','INTEGER NOT NULL DEFAULT 0'),
         ('total_amount','REAL NOT NULL DEFAULT 0'), ('deposit_percent','REAL NOT NULL DEFAULT 100'),
         ('deposit_amount','REAL NOT NULL DEFAULT 0'), ('amount_paid','REAL NOT NULL DEFAULT 0'),
         ('balance_due','REAL NOT NULL DEFAULT 0'), ('currency',"TEXT NOT NULL DEFAULT 'USD'"),
+        ('conditions_version','TEXT'),('conditions_snapshot_json','TEXT'),('conditions_accepted_at','TEXT'),
         ('payment_status',"TEXT DEFAULT 'unpaid'"), ('expires_at','TEXT'), ('updated_at','TEXT')]:
         add_col(c, 'bookings', name, ddl)
     departure_cols=table_cols(c, 'departures')
@@ -443,9 +468,18 @@ def init_db():
     add_col(c, 'departures', 'places_total', 'INTEGER')
     add_col(c, 'departures', 'places_available', 'INTEGER')
     add_col(c, 'departures', 'mock_generated', 'INTEGER NOT NULL DEFAULT 0')
+    add_col(c, 'departures', 'embarkation', 'TEXT')
+    add_col(c, 'departures', 'disembarkation', 'TEXT')
+    add_col(c, 'departures', 'itinerary_json', "TEXT NOT NULL DEFAULT '[]'")
+    add_col(c, 'departures', 'booking_conditions_json', "TEXT NOT NULL DEFAULT '{}'")
     c.execute('''CREATE INDEX IF NOT EXISTS idx_departures_yacht_schedule
                  ON departures(yacht_id,status,mock_generated,start_date)''')
     add_col(c, 'availability_holds', 'cabin_units', 'INTEGER NOT NULL DEFAULT 0')
+    for name,ddl in [('gallery_json',"TEXT NOT NULL DEFAULT '[]'"),('window_type','TEXT'),('air_conditioning','INTEGER NOT NULL DEFAULT 0'),('ensuite','INTEGER NOT NULL DEFAULT 0'),('occupancy_modes_json',"TEXT NOT NULL DEFAULT '[\"private\"]'")]:add_col(c,'yacht_cabin_types',name,ddl)
+    for name,ddl in [('list_price_pp','REAL'),('promotion_label','TEXT'),('promotion_starts_at','TEXT'),('promotion_ends_at','TEXT'),('low_stock_threshold','INTEGER NOT NULL DEFAULT 4'),('single_occupancy_surcharge_percent','REAL NOT NULL DEFAULT 0'),('privacy_surcharge_percent','REAL NOT NULL DEFAULT 0')]:add_col(c,'departure_cabin_inventory',name,ddl)
+    for name,ddl in [('occupancy_preference',"TEXT NOT NULL DEFAULT 'private'"),('list_price_pp','REAL'),('discount_amount','REAL NOT NULL DEFAULT 0'),('surcharge_amount','REAL NOT NULL DEFAULT 0'),('inventory_units','INTEGER NOT NULL DEFAULT 0')]:add_col(c,'booking_cabin_items',name,ddl)
+    add_col(c,'availability_hold_cabin_items','inventory_units','INTEGER NOT NULL DEFAULT 0')
+    c.execute('''CREATE TABLE IF NOT EXISTS booking_guests(id INTEGER PRIMARY KEY AUTOINCREMENT,booking_id INTEGER NOT NULL,full_name TEXT,rooming_preference TEXT,notes TEXT,sort_order INTEGER NOT NULL DEFAULT 0,FOREIGN KEY(booking_id) REFERENCES bookings(id) ON DELETE CASCADE)''')
     if added_places_total or added_places_available:
         c.execute('''UPDATE departures
                      SET places_total=COALESCE(places_total,(SELECT guests FROM yachts WHERE yachts.id=departures.yacht_id),0),
@@ -463,7 +497,7 @@ def init_db():
         add_col(c, 'payments', name, ddl)
 
     ts = now_iso()
-    defaults = {'commission_rate':'30','deposit_percent':'30','hold_minutes':'30','currency':'USD'}
+    defaults = {'commission_rate':'30','deposit_percent':'30','hold_minutes':'30','currency':'USD','booking_conditions_version':'2026-09-17','booking_conditions_intro':'Reservations create a temporary availability hold. No payment is taken until you choose to continue to payment.','best_price_guarantee_enabled':'0','best_price_guarantee_text':''}
     for k,v in defaults.items():
         c.execute('INSERT OR IGNORE INTO platform_settings(key,value,updated_at) VALUES(?,?,?)', (k,v,ts))
 
@@ -494,6 +528,14 @@ def init_db():
 
     seed_liveaboard_snapshot(c, ts)
     seed_mock_departures(c)
+    c.execute('''INSERT INTO yacht_cabin_types(yacht_id,name,bed_configuration,description,image,capacity,created_at,updated_at)
+                 SELECT y.id,'Standard Cabin','Twin or double','Comfortable onboard accommodation.',y.image,MAX(1,(y.guests+MAX(y.cabins,1)-1)/MAX(y.cabins,1)),?,?
+                 FROM yachts y WHERE NOT EXISTS(SELECT 1 FROM yacht_cabin_types t WHERE t.yacht_id=y.id)''',(ts,ts))
+    c.execute('''INSERT OR IGNORE INTO departure_cabin_inventory(departure_id,cabin_type_id,cabins_total,cabins_available,price_pp)
+                 SELECT d.id,t.id,COALESCE(d.cabins_total,0),COALESCE(d.cabins_available,0),COALESCE(d.price_pp,0)
+                 FROM departures d JOIN yacht_cabin_types t ON t.yacht_id=d.yacht_id WHERE t.name='Standard Cabin' ''')
+    c.execute("UPDATE yacht_cabin_types SET gallery_json=CASE WHEN (gallery_json IS NULL OR gallery_json='[]') AND image IS NOT NULL THEN json_array(image) ELSE gallery_json END,occupancy_modes_json=CASE WHEN name='Standard Cabin' AND (occupancy_modes_json IS NULL OR occupancy_modes_json='[\"private\"]') THEN '[\"shared\",\"private\"]' ELSE occupancy_modes_json END")
+    c.execute('UPDATE departure_cabin_inventory SET list_price_pp=COALESCE(list_price_pp,price_pp)')
 
     # Seed demo users if missing. Passwords are intentionally documented demo credentials.
     demo_users=[
@@ -526,13 +568,13 @@ def set_setting(c,key,value):
 def rowdict(row):
     if not row:return None
     d=dict(row)
-    for k in ('amenities_json','experiences_json','gallery_json','detail_json','raw_response'):
+    for k in ('amenities_json','experiences_json','gallery_json','occupancy_modes_json','itinerary_json','booking_conditions_json','conditions_snapshot_json','detail_json','raw_response'):
         if k in d:
-            parsed=json_load(d.get(k), {} if k in ('detail_json','raw_response') else [])
+            parsed=json_load(d.get(k), {} if k in ('detail_json','raw_response','booking_conditions_json','conditions_snapshot_json') else [])
             if k.endswith('_json'):d[k[:-5]]=parsed
             else:d[k]=parsed
             if k.endswith('_json'):d.pop(k,None)
-    for k in ('private_enabled','shared_enabled','mock_generated','verified','active'):
+    for k in ('private_enabled','shared_enabled','private_rate_public','private_instant_booking','mock_generated','verified','active','air_conditioning','ensuite'):
         if k in d:d[k]=bool(d[k])
     if isinstance(d.get('experiences'),list):
         d['experiences']=['Liveaboard' if str(value).lower()=='shared liveaboard' else value for value in d['experiences']]
@@ -575,28 +617,27 @@ def booking_selection(c,data,lock=False):
     mode=data.get('mode')
     if mode not in ('private','shared'):raise BookingSelectionError('mode must be private or shared')
     try:
-        if mode=='shared' and ('guests' not in data or 'cabins_booked' not in data):raise ValueError()
+        if mode=='shared' and ('guests' not in data or 'cabin_selections' not in data):raise ValueError()
         guests=int(data.get('guests') or 1)
         if guests<1:raise ValueError()
     except (TypeError,ValueError):raise BookingSelectionError('A valid guest count is required')
     if lock:c.execute('BEGIN IMMEDIATE')
-    departure_id=data.get('departure_id') or None;start=data.get('start_date');end=data.get('end_date');nights=0;total=0.0;cabins_booked=0;departure=None
+    departure_id=data.get('departure_id') or None;start=data.get('start_date');end=data.get('end_date');nights=0;total=0.0;cabins_booked=0;departure=None;cabin_selections=[]
     if mode=='private':
         if not yacht['private_enabled']:raise BookingSelectionError('Private charter unavailable',409)
+        if not yacht.get('private_instant_booking') or not yacht.get('private_rate_public') or float(yacht.get('private_rate') or 0)<=0:
+            raise BookingSelectionError('This yacht accepts charter enquiries rather than instant bookings',409)
         try:
             sd,ed=parse_date(start),parse_date(end)
             if not sd or not ed or ed<=sd:raise ValueError()
         except (TypeError,ValueError):raise BookingSelectionError('Valid start_date and end_date are required')
         nights=(ed-sd).days
+        enforce_private_nights(yacht,nights)
         if guests>int(yacht['guests']):raise BookingSelectionError('Guest count exceeds yacht capacity')
         if overlap_exists(c,yacht['id'],start,end):raise BookingSelectionError('These dates are no longer available',409)
         total=round(float(yacht['private_rate'] or 0)*nights,2);departure_id=None
     else:
         if not yacht['shared_enabled']:raise BookingSelectionError('Liveaboard unavailable',409)
-        try:
-            cabins_booked=int(data.get('cabins_booked'))
-            if cabins_booked<1 or cabins_booked>guests:raise ValueError()
-        except (TypeError,ValueError):raise BookingSelectionError('Cabins must be between one and the number of guests')
         if lock:clean_expired_holds(c)
         departure=rowdict(c.execute("SELECT * FROM departures WHERE id=? AND yacht_id=? AND status='open'",(departure_id,yacht['id'])).fetchone())
         if not departure:raise BookingSelectionError('Liveaboard departure not found',404)
@@ -604,14 +645,34 @@ def booking_selection(c,data,lock=False):
                               FROM availability_holds WHERE departure_id=? AND status='active' AND expires_at>?""",(departure_id,now_iso())).fetchone()
         places_remaining=max(0,int(departure['places_available'] or 0)-int(reserved['places'] or 0))
         cabins_remaining=max(0,int(departure['cabins_available'] or 0)-int(reserved['cabins'] or 0))
+        inventory={str(i['cabin_type_id']):i for i in cabin_inventory(c,departure_id)};seen=set();allocated=0
+        raw_selections=data.get('cabin_selections')
+        if not isinstance(raw_selections,list) or not raw_selections:raise BookingSelectionError('Choose at least one cabin category')
+        for raw in raw_selections:
+            item=inventory.get(str(raw.get('cabin_type_id'))) if isinstance(raw,dict) else None
+            try:selected_guests=int(raw.get('guests'))
+            except (TypeError,ValueError,AttributeError):raise BookingSelectionError('Allocated guests must be a positive whole number')
+            if not item or str(item['cabin_type_id']) in seen:raise BookingSelectionError('Cabin category is invalid')
+            modes=item.get('occupancy_modes') or ['private'];occupancy=str(raw.get('occupancy_preference') or ('private' if raw.get('cabins') else modes[0]))
+            if occupancy not in ('shared','private') or occupancy not in modes:raise BookingSelectionError(f"{item['name']} does not support that occupancy choice")
+            if selected_guests<1:raise BookingSelectionError('Allocated guests must be a positive whole number')
+            capacity=max(1,int(item['capacity']));selected_cabins=(selected_guests+capacity-1)//capacity
+            inventory_units=selected_guests if occupancy=='shared' else selected_cabins*capacity
+            if inventory_units>int(item.get('spaces_remaining') or 0):raise BookingSelectionError(f"{item['name']} no longer has enough space",409)
+            today=now_iso();promo_active=(not item.get('promotion_starts_at') or str(item['promotion_starts_at'])<=today) and (not item.get('promotion_ends_at') or str(item['promotion_ends_at'])>=today)
+            list_price=float(item.get('list_price_pp') or item['price_pp']);price=float(item['price_pp'] if promo_active else list_price)
+            unused=max(0,inventory_units-selected_guests);rate=float(item.get('privacy_surcharge_percent') or 0) if occupancy=='private' and 'shared' in modes else float(item.get('single_occupancy_surcharge_percent') or 0)
+            surcharge=round(unused*price*rate/100,2);discount=round(max(0,list_price-price)*selected_guests,2);line=round(selected_guests*price+surcharge,2)
+            seen.add(str(item['cabin_type_id']));allocated+=selected_guests;cabins_booked+=selected_cabins
+            cabin_selections.append({'cabin_type_id':item['cabin_type_id'],'cabin_type_name':item['name'],'cabins':selected_cabins,'guests':selected_guests,'capacity':capacity,'inventory_units':inventory_units,'occupancy_preference':occupancy,'list_price_pp':list_price,'price_pp':price,'discount_amount':discount,'surcharge_amount':surcharge,'line_total':line})
+        if allocated!=guests:raise BookingSelectionError('Allocated cabin guests must equal the total guest count')
         if guests>places_remaining:raise BookingSelectionError('Not enough passenger places remain',409)
-        if cabins_booked>cabins_remaining:raise BookingSelectionError('Not enough cabins remain',409)
-        start,end,nights=departure['start_date'],departure['end_date'],departure['nights'];total=round(float(departure['price_pp'] or 0)*guests,2)
+        start,end,nights=departure['start_date'],departure['end_date'],departure['nights'];total=round(sum(i['line_total'] for i in cabin_selections),2)
     deposit_percent=max(0,min(100,float(setting(c,'deposit_percent','30',True))))
     deposit=round(total*deposit_percent/100,2);currency=setting(c,'currency','USD')
     return {'yacht':yacht,'departure':departure,'departure_id':departure_id,'mode':mode,'guests':guests,'cabins_booked':cabins_booked,
             'start_date':start,'end_date':end,'nights':nights,'total_amount':total,'deposit_percent':deposit_percent,
-            'deposit_amount':deposit,'balance_amount':round(total-deposit,2),'currency':currency}
+            'deposit_amount':deposit,'balance_amount':round(total-deposit,2),'currency':currency,'cabin_selections':cabin_selections}
 
 
 def public_quote(selection):
@@ -628,6 +689,33 @@ def model_flags(data, existing=None):
     return int(private_enabled),int(shared_enabled)
 
 
+def private_settings(data, existing=None):
+    existing=existing or {}
+    public=bool(data.get('private_rate_public',existing.get('private_rate_public',False)))
+    instant=bool(data.get('private_instant_booking',existing.get('private_instant_booking',False)))
+    rate=data.get('private_rate',existing.get('private_rate'))
+    try:rate=float(rate) if rate not in (None,'') else None
+    except (TypeError,ValueError):raise ValueError('private_rate is invalid')
+    def night(name):
+        raw=data.get(name,existing.get(name))
+        if raw in (None,''):return None
+        try:value=int(raw)
+        except (TypeError,ValueError):raise ValueError(name+' is invalid')
+        if value<1 or value>365:raise ValueError(name+' must be between 1 and 365')
+        return value
+    minimum,maximum=night('private_min_nights'),night('private_max_nights')
+    if minimum and maximum and maximum<minimum:raise ValueError('private_max_nights must be greater than or equal to private_min_nights')
+    if public and (not rate or rate<=0):raise ValueError('Publishing a private rate requires a positive nightly rate')
+    if instant and (not public or not rate or rate<=0):raise ValueError('Instant booking requires a disclosed positive private rate')
+    return {'private_rate':rate,'private_rate_public':int(public),'private_instant_booking':int(instant),'private_min_nights':minimum,'private_max_nights':maximum}
+
+
+def enforce_private_nights(yacht,nights):
+    minimum=int(yacht.get('private_min_nights') or 0);maximum=int(yacht.get('private_max_nights') or 0)
+    if minimum and nights<minimum:raise BookingSelectionError(f'This yacht requires at least {minimum} nights',409)
+    if maximum and nights>maximum:raise BookingSelectionError(f'This yacht allows a maximum of {maximum} nights',409)
+
+
 def departure_values(data):
     try:
         start=parse_date(data.get('start_date'));end=parse_date(data.get('end_date'))
@@ -642,7 +730,24 @@ def departure_values(data):
     if values['places_available']>values['places_total']:raise ValueError('Available places cannot exceed total places')
     status=data.get('status','open')
     if status not in ('open','closed'):raise ValueError('Departure status must be open or closed')
-    return {**values,'title':data.get('title'),'start_date':data.get('start_date'),'end_date':data.get('end_date'),'status':status}
+    itinerary=data.get('itinerary',[])
+    if not isinstance(itinerary,list):raise ValueError('itinerary must be an array of days')
+    cleaned=[]
+    for item in itinerary:
+        try:day=int(item.get('day'));title=str(item.get('title') or '').strip();locations=[str(x).strip() for x in item.get('locations',[]) if str(x).strip()];description=str(item.get('description') or '').strip()
+        except (TypeError,ValueError,AttributeError):raise ValueError('Itinerary day is invalid')
+        if day<1 or not title:raise ValueError('Each itinerary day needs a number and title')
+        cleaned.append({'day':day,'title':title,'locations':locations,'description':description})
+    if len({x['day'] for x in cleaned})!=len(cleaned):raise ValueError('Itinerary day numbers must be unique')
+    conditions=data.get('booking_conditions') or {}
+    if not isinstance(conditions,dict):raise ValueError('booking_conditions must be an object')
+    cleaned_conditions={}
+    for key in ('inclusions','mandatory_extras','optional_extras'):
+        value=conditions.get(key,[])
+        if not isinstance(value,list):raise ValueError(f'{key} must be an array')
+        cleaned_conditions[key]=[str(x).strip()[:300] for x in value if str(x).strip()][:40]
+    for key in ('payment_terms','cancellation_terms'):cleaned_conditions[key]=str(conditions.get(key) or '').strip()[:4000]
+    return {**values,'title':data.get('title'),'start_date':data.get('start_date'),'end_date':data.get('end_date'),'status':status,'embarkation':data.get('embarkation'),'disembarkation':data.get('disembarkation'),'itinerary':sorted(cleaned,key=lambda x:x['day']),'booking_conditions':cleaned_conditions}
 
 
 def departure_dict(c, row, include_effective=True):
@@ -654,7 +759,76 @@ def departure_dict(c, row, include_effective=True):
                        (dep['id'],now_iso())).fetchone()
     dep['places_remaining']=max(0,int(dep.get('places_available') or 0)-int(reserved['places'] or 0))
     dep['cabins_remaining']=max(0,int(dep.get('cabins_available') or 0)-int(reserved['cabins'] or 0))
+    dep['cabin_inventory']=cabin_inventory(c,dep['id'])
     return dep
+
+
+def cabin_inventory(c,departure_id):
+    return [rowdict(r) for r in c.execute('''SELECT i.*,t.name,t.deck,t.bed_configuration,t.description,t.image,t.gallery_json,t.window_type,t.air_conditioning,t.ensuite,t.occupancy_modes_json,t.capacity,t.sort_order,
+      MAX(0,(i.cabins_available*t.capacity)-COALESCE((SELECT SUM(CASE WHEN hi.inventory_units>0 THEN hi.inventory_units ELSE hi.cabins*t.capacity END) FROM availability_hold_cabin_items hi JOIN availability_holds h ON h.id=hi.hold_id WHERE hi.departure_id=i.departure_id AND hi.cabin_type_id=i.cabin_type_id AND h.status='active' AND h.expires_at>?),0)) spaces_remaining,
+      CAST(MAX(0,(i.cabins_available*t.capacity)-COALESCE((SELECT SUM(CASE WHEN hi.inventory_units>0 THEN hi.inventory_units ELSE hi.cabins*t.capacity END) FROM availability_hold_cabin_items hi JOIN availability_holds h ON h.id=hi.hold_id WHERE hi.departure_id=i.departure_id AND hi.cabin_type_id=i.cabin_type_id AND h.status='active' AND h.expires_at>?),0))/t.capacity AS INTEGER) cabins_remaining
+      FROM departure_cabin_inventory i JOIN yacht_cabin_types t ON t.id=i.cabin_type_id WHERE i.departure_id=? AND t.active=1 ORDER BY t.sort_order,t.id''',(now_iso(),now_iso(),departure_id)).fetchall()]
+
+
+def public_yacht(yacht):
+    if yacht and not yacht.get('private_rate_public'):yacht['private_rate']=None
+    return yacht
+
+
+def search_catalogue(c,q):
+    mode=(q.get('mode') or [''])[0].lower()
+    if mode not in ('private','shared'):raise ValueError('mode must be private or shared')
+    start=(q.get('start') or [None])[0];end=(q.get('end') or [None])[0]
+    if bool(start)!=bool(end):raise ValueError('start and end must be provided together')
+    if start:
+        sd,ed=parse_date(start),parse_date(end)
+        if not sd or not ed or ed<=sd:raise ValueError('Valid start and end dates are required')
+    guests=int((q.get('guests') or ['1'])[0])
+    if guests<1 or guests>200:raise ValueError('guests is invalid')
+    duration_min=int((q.get('duration_min') or ['0'])[0]);duration_max=int((q.get('duration_max') or ['0'])[0])
+    price_min=float((q.get('price_min') or ['0'])[0]);price_max=float((q.get('price_max') or ['0'])[0])
+    if min(duration_min,duration_max,price_min,price_max)<0 or (duration_min and duration_max and duration_min>duration_max) or (price_min and price_max and price_min>=price_max):raise ValueError('Search range is invalid')
+    selected=list(dict.fromkeys(q.get('amenity') or []))
+    if any(value not in AMENITY_CHOICES for value in selected):raise ValueError('amenity is invalid')
+    yacht_type=(q.get('type') or [''])[0].strip().lower();experience=(q.get('experience') or [''])[0].strip().lower()
+    cursor=None
+    if q.get('cursor'):
+        try:
+            raw=(q['cursor'][0]+'===').replace('-','+').replace('_','/')
+            rating,identity=json.loads(base64.b64decode(raw).decode());cursor=(float(rating),int(identity))
+        except Exception:raise ValueError('cursor is invalid')
+    yachts=[rowdict(row) for row in c.execute("SELECT * FROM yachts WHERE status='live' AND verified=1 ORDER BY COALESCE(rating,0) DESC,id DESC").fetchall()]
+    results=[]
+    for yacht in yachts:
+        if yacht_type and str(yacht.get('type') or '').lower()!=yacht_type:continue
+        if experience and experience not in [str(value).lower() for value in yacht.get('experiences',[])]:continue
+        normalized={str(value).strip().lower() for value in yacht.get('amenities',[])}
+        if any(not (normalized & AMENITY_ALIASES[value]) for value in selected):continue
+        if mode=='private':
+            if not yacht.get('private_enabled') or guests>int(yacht.get('guests') or 0):continue
+            if start and overlap_exists(c,yacht['id'],start,end):continue
+            if price_min or price_max:
+                rate=float(yacht.get('private_rate') or 0)
+                if not yacht.get('private_rate_public') or rate<=0 or (price_min and rate<price_min) or (price_max and rate>=price_max):continue
+            results.append(public_yacht(yacht));continue
+        if not yacht.get('shared_enabled'):continue
+        matches=[]
+        for raw in c.execute("SELECT * FROM departures WHERE yacht_id=? AND status='open' ORDER BY mock_generated ASC,start_date,id",(yacht['id'],)).fetchall():
+            dep=departure_dict(c,raw);nights=int(dep.get('nights') or 0);rate=float(dep.get('price_pp') or 0)
+            if start and (dep.get('start_date')>end or dep.get('end_date')<start):continue
+            if duration_min and nights<duration_min or duration_max and nights>duration_max:continue
+            if price_min and rate<price_min or price_max and rate>=price_max:continue
+            if dep['places_remaining']<guests or dep['cabins_remaining']<1:continue
+            dep['available_units']=dep['places_remaining'];matches.append(dep)
+        if matches:yacht['matching_departures']=matches;results.append(public_yacht(yacht))
+    total=len(results)
+    if cursor:results=[yacht for yacht in results if (float(yacht.get('rating') or 0),int(yacht['id']))<cursor]
+    page=results[:12]
+    next_cursor=None
+    if len(results)>12 and page:
+        last=page[-1];token=json.dumps([float(last.get('rating') or 0),int(last['id'])]).encode()
+        next_cursor=base64.urlsafe_b64encode(token).decode().rstrip('=')
+    return {'items':page,'total':total,'next_cursor':next_cursor}
 
 
 def bml_config():
@@ -796,8 +970,17 @@ class Handler(SimpleHTTPRequestHandler):
         c=db_conn()
         try:
             if u.path=='/api/health':self.send_json({'ok':True,'time':now_iso(),'auth_enforced':ENFORCE_AUTH});return
+            if u.path=='/api/booking-config':
+                self.send_json({'conditions_version':setting(c,'booking_conditions_version','2026-09-17'),'conditions_intro':setting(c,'booking_conditions_intro',''),'best_price_guarantee_enabled':setting(c,'best_price_guarantee_enabled','0')=='1','best_price_guarantee_text':setting(c,'best_price_guarantee_text','')});return
             if u.path=='/api/auth/me':
                 me=self.actor(c);self.send_json(me or {'authenticated':False},200 if me else 401);return
+            if u.path=='/api/search/options':
+                types=[row['type'] for row in c.execute("SELECT DISTINCT type FROM yachts WHERE status='live' AND verified=1 AND type<>'' ORDER BY type").fetchall()]
+                self.send_json({'types':types,'amenities':AMENITY_CHOICES});return
+            if u.path=='/api/search':
+                try:self.send_json(search_catalogue(c,q))
+                except (TypeError,ValueError) as error:self.send_json({'error':str(error)},400)
+                return
             if u.path=='/api/yachts':
                 where=[];vals=[]
                 if q.get('vendor_id'):where.append('vendor_id=?');vals.append(q['vendor_id'][0])
@@ -806,6 +989,10 @@ class Handler(SimpleHTTPRequestHandler):
                     where.append('(name LIKE ? OR type LIKE ? OR description LIKE ?)');s='%'+q['q'][0]+'%';vals += [s,s,s]
                 sql='SELECT * FROM yachts'+((' WHERE '+' AND '.join(where)) if where else '')+' ORDER BY verified DESC,rating DESC,id DESC'
                 yachts=[rowdict(r) for r in c.execute(sql,vals).fetchall()]
+                viewer=self.actor(c)
+                for yacht in yachts:
+                    yacht['cabin_types']=[rowdict(r) for r in c.execute('SELECT * FROM yacht_cabin_types WHERE yacht_id=? AND active=1 ORDER BY sort_order,id',(yacht['id'],)).fetchall()]
+                    if not viewer or not (viewer.get('role')=='admin' or viewer.get('role')=='vendor' and viewer.get('vendor_id')==yacht.get('vendor_id')):public_yacht(yacht)
                 mode=(q.get('mode') or [''])[0].lower()
                 if not mode:
                     self.send_json(yachts);return
@@ -855,6 +1042,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if not y:self.send_json({'error':'Not found'},404);return
                 y['departures']=[departure_dict(c,r) for r in c.execute("""SELECT * FROM departures WHERE yacht_id=? AND status='open'
                                                                            ORDER BY mock_generated ASC,start_date,id""",(i,)).fetchall()]
+                y['cabin_types']=[rowdict(r) for r in c.execute('SELECT * FROM yacht_cabin_types WHERE yacht_id=? AND active=1 ORDER BY sort_order,id',(i,)).fetchall()]
+                viewer=self.actor(c)
+                if not viewer or not (viewer.get('role')=='admin' or viewer.get('role')=='vendor' and viewer.get('vendor_id')==y.get('vendor_id')):public_yacht(y)
                 self.send_json(y);return
             if u.path.endswith('/availability') and u.path.startswith('/api/yachts/'):
                 i=u.path.split('/')[3];start=(q.get('start') or [None])[0];end=(q.get('end') or [None])[0]
@@ -869,7 +1059,9 @@ class Handler(SimpleHTTPRequestHandler):
                        LEFT JOIN departures d ON d.id=b.departure_id''';vals=[]
                 if actor.get('role')=='vendor' and actor.get('vendor_id'):
                     sql+=' WHERE y.vendor_id=?';vals.append(actor['vendor_id'])
-                sql+=' ORDER BY b.id DESC';self.send_json([rowdict(r) for r in c.execute(sql,vals).fetchall()]);return
+                sql+=' ORDER BY b.id DESC';bookings=[rowdict(r) for r in c.execute(sql,vals).fetchall()]
+                for booking in bookings:booking['travelers']=[rowdict(r) for r in c.execute('SELECT * FROM booking_guests WHERE booking_id=? ORDER BY sort_order,id',(booking['id'],)).fetchall()]
+                self.send_json(bookings);return
             if u.path=='/api/departures':
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
@@ -888,7 +1080,9 @@ class Handler(SimpleHTTPRequestHandler):
                 i=u.path.split('/')[3];b=rowdict(c.execute('''SELECT b.*,y.name yacht_name,y.vendor_id FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?''',(i,)).fetchone())
                 if not b:self.send_json({'error':'Not found'},404);return
                 b['payments']=[rowdict(r) for r in c.execute('SELECT * FROM payments WHERE booking_id=? ORDER BY id',(i,)).fetchall()]
+                b['travelers']=[rowdict(r) for r in c.execute('SELECT * FROM booking_guests WHERE booking_id=? ORDER BY sort_order,id',(i,)).fetchall()]
                 b['refunds']=[rowdict(r) for r in c.execute('SELECT * FROM refunds WHERE booking_id=? ORDER BY id',(i,)).fetchall()]
+                b['cabin_items']=[rowdict(r) for r in c.execute('SELECT * FROM booking_cabin_items WHERE booking_id=? ORDER BY id',(i,)).fetchall()]
                 self.send_json(b);return
             if u.path=='/api/payments':
                 actor=self.require(c,['vendor','admin']);
@@ -972,11 +1166,14 @@ class Handler(SimpleHTTPRequestHandler):
                 if not vendor_id:self.send_json({'error':'vendor_id required'},400);return
                 try:private_enabled,shared_enabled=model_flags(data)
                 except ValueError as e:self.send_json({'error':str(e)},400);return
+                try:private=private_settings(data)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                data.update(private)
                 data['private_enabled']=private_enabled;data['shared_enabled']=shared_enabled
-                fields=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','shared_rate']
+                fields=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','private_rate_public','private_instant_booking','private_min_nights','private_max_nights','shared_rate']
                 vals=[data.get(f) for f in fields];slug='-'.join(str(data.get('name','yacht')).lower().split())
-                cur=c.execute('''INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',[vendor_id,vals[0],slug]+vals[1:]+[json.dumps(data.get('amenities',[])),json.dumps(data.get('experiences',[])),json.dumps(data.get('gallery',[])),ts])
+                cur=c.execute('''INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,private_rate_public,private_instant_booking,private_min_nights,private_max_nights,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',[vendor_id,vals[0],slug]+vals[1:]+[json.dumps(data.get('amenities',[])),json.dumps(data.get('experiences',[])),json.dumps(data.get('gallery',[])),ts])
                 audit(c,actor,'create','yacht',cur.lastrowid,{'name':data.get('name')});c.commit();self.send_json({'id':cur.lastrowid},201);return
             if u.path=='/api/bookings/quote':
                 try:quote=booking_selection(c,data)
@@ -986,6 +1183,9 @@ class Handler(SimpleHTTPRequestHandler):
                 try:selection=booking_selection(c,data,True)
                 except BookingSelectionError as e:
                     c.rollback();self.send_json({'error':str(e)},e.status);return
+                conditions_version=setting(c,'booking_conditions_version','2026-09-17')
+                if not data.get('conditions_accepted') or str(data.get('conditions_version') or '')!=conditions_version:
+                    c.rollback();self.send_json({'error':'Please review and accept the current booking conditions'},409);return
                 yacht=selection['yacht'];mode=selection['mode'];guests=selection['guests'];cabins_booked=selection['cabins_booked'];departure_id=selection['departure_id']
                 start=selection['start_date'];end=selection['end_date'];nights=selection['nights'];total=selection['total_amount']
                 deposit_percent=selection['deposit_percent'];deposit=selection['deposit_amount'];currency=selection['currency']
@@ -995,14 +1195,24 @@ class Handler(SimpleHTTPRequestHandler):
                     VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?)''',
                     (ref,yacht['id'],departure_id,mode,data.get('guest_name'),data.get('email'),data.get('phone'),guests,cabins_booked,start,end,nights,total,deposit_percent,deposit,total,currency,data.get('notes'),expires,ts,ts))
                 bid=cur.lastrowid
-                c.execute('INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,?,\'active\',?)',
+                conditions_snapshot={'version':conditions_version,'platform':setting(c,'booking_conditions_intro',''),'departure':(selection.get('departure') or {}).get('booking_conditions') or {}}
+                c.execute('UPDATE bookings SET conditions_version=?,conditions_snapshot_json=?,conditions_accepted_at=? WHERE id=?',(conditions_version,json.dumps(conditions_snapshot),ts,bid))
+                hold=c.execute('INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) VALUES(?,?,?,?,?,?,?,?,\'active\',?)',
                           (bid,yacht['id'],departure_id,start,end,guests if mode=='shared' else 1,cabins_booked,expires,ts))
+                for item in selection['cabin_selections']:
+                    c.execute('''INSERT INTO booking_cabin_items(booking_id,cabin_type_id,cabin_type_name,cabins,guests,capacity,price_pp,list_price_pp,occupancy_preference,discount_amount,surcharge_amount,inventory_units,line_total) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''',(bid,item['cabin_type_id'],item['cabin_type_name'],item['cabins'],item['guests'],item['capacity'],item['price_pp'],item['list_price_pp'],item['occupancy_preference'],item['discount_amount'],item['surcharge_amount'],item['inventory_units'],item['line_total']))
+                    c.execute('INSERT INTO availability_hold_cabin_items(hold_id,departure_id,cabin_type_id,cabins,inventory_units) VALUES(?,?,?,?,?)',(hold.lastrowid,departure_id,item['cabin_type_id'],item['cabins'],item['inventory_units']))
+                traveler_rows=data.get('travelers') if isinstance(data.get('travelers'),list) else []
+                for position,traveler in enumerate(traveler_rows[:guests]):
+                    if isinstance(traveler,dict):c.execute('INSERT INTO booking_guests(booking_id,full_name,rooming_preference,notes,sort_order) VALUES(?,?,?,?,?)',(bid,str(traveler.get('full_name') or '')[:120],str(traveler.get('rooming_preference') or '')[:80],str(traveler.get('notes') or '')[:500],position))
                 notify(c,f'New {mode} booking request {ref} for {yacht["name"]}.','New booking request',vendor_id=yacht['vendor_id'],booking_id=bid)
                 audit(c,self.actor(c),'create','booking',bid,{'ref':ref,'total':total});c.commit();self.send_json({'id':bid,'booking_ref':ref,'status':'pending_operator','total_amount':total,'deposit_percent':deposit_percent,'deposit_amount':deposit,'balance_due':total,'currency':currency,'hold_expires_at':expires},201);return
             if u.path=='/api/payments/create':
-                booking_id=data.get('booking_id');b=rowdict(c.execute('SELECT * FROM bookings WHERE id=?',(booking_id,)).fetchone())
+                booking_id=data.get('booking_id');b=rowdict(c.execute('SELECT b.*,y.private_rate_public,y.private_instant_booking FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?',(booking_id,)).fetchone())
                 if not b:self.send_json({'error':'Booking not found'},404);return
                 if b['status'] in ('declined','cancelled','completed'):self.send_json({'error':'Booking is not payable'},409);return
+                if float(b.get('total_amount') or 0)<=0:self.send_json({'error':'A zero-value booking cannot be paid'},409);return
+                if b.get('mode')=='private' and (not b.get('private_rate_public') or not b.get('private_instant_booking')):self.send_json({'error':'This private charter is enquiry-only'},409);return
                 ptype=data.get('payment_type','deposit' if float(b['deposit_amount'])<float(b['total_amount']) else 'full')
                 if ptype not in ('deposit','balance','full'):ptype='full'
                 amount=payment_amount_for_booking(c,b,ptype)
@@ -1046,7 +1256,29 @@ class Handler(SimpleHTTPRequestHandler):
                 if amount<=0:self.send_json({'error':'amount must be positive'},400);return
                 cur=c.execute('INSERT INTO payouts(vendor_id,amount,currency,status,reference,notes,created_at) VALUES(?,?,?,\'pending\',?,?,?)',(vendor_id,amount,data.get('currency','USD'),data.get('reference'),data.get('notes'),ts));audit(c,actor,'payout_created','payout',cur.lastrowid,{'amount':amount});c.commit();self.send_json({'id':cur.lastrowid,'status':'pending'},201);return
             if u.path=='/api/enquiries':
-                cur=c.execute('INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,status,created_at) VALUES(?,?,?,?,?,?,\'new\',?)',(data.get('yacht_id'),data.get('guest_name'),data.get('email'),data.get('guests'),data.get('experience'),data.get('message'),ts));c.commit();self.send_json({'id':cur.lastrowid},201);return
+                yacht=rowdict(c.execute("SELECT * FROM yachts WHERE id=? AND status='live' AND verified=1 AND private_enabled=1",(data.get('yacht_id'),)).fetchone())
+                if not yacht:self.send_json({'error':'Yacht not found'},404);return
+                try:
+                    guest_name=str(data.get('guest_name') or '').strip();email=str(data.get('email') or '').strip().lower()
+                    if not guest_name or len(guest_name)>120 or '@' not in email or len(email)>254:raise ValueError('A valid name and email are required')
+                    start,end=data.get('start_date'),data.get('end_date');sd,ed=parse_date(start),parse_date(end)
+                    if not sd or not ed or ed<=sd or sd<datetime.now(timezone.utc).date():raise ValueError()
+                    guests=int(data.get('guests') or 0)
+                    if guests<1 or guests>int(yacht.get('guests') or 0):raise ValueError('Guest count exceeds yacht capacity')
+                    enforce_private_nights(yacht,(ed-sd).days)
+                except BookingSelectionError as e:self.send_json({'error':str(e)},e.status);return
+                except (TypeError,ValueError) as e:self.send_json({'error':str(e) or 'Valid future dates and guest count are required'},400);return
+                cur=c.execute('INSERT INTO enquiries(yacht_id,guest_name,email,guests,experience,message,start_date,end_date,status,created_at) VALUES(?,?,?,?,?,?,?,?,\'new\',?)',(data.get('yacht_id'),guest_name,email,guests,data.get('experience'),data.get('message'),start,end,ts));c.commit();self.send_json({'id':cur.lastrowid},201);return
+            if u.path.endswith('/cabin-types') and u.path.startswith('/api/yachts/'):
+                actor=self.require(c,['vendor','admin']);
+                if not actor:return
+                i=u.path.split('/')[3];y=rowdict(c.execute('SELECT * FROM yachts WHERE id=?',(i,)).fetchone())
+                if not y or actor.get('role')=='vendor' and y['vendor_id']!=actor.get('vendor_id'):self.send_json({'error':'Yacht not found'},404);return
+                try:capacity=int(data.get('capacity'))
+                except:self.send_json({'error':'A valid cabin capacity is required'},400);return
+                if not data.get('name') or capacity<1:self.send_json({'error':'Cabin name and positive capacity are required'},400);return
+                gallery=data.get('gallery') if isinstance(data.get('gallery'),list) else ([data.get('image')] if data.get('image') else []);modes=[x for x in data.get('occupancy_modes',[]) if x in ('shared','private')] or ['private']
+                cur=c.execute('INSERT INTO yacht_cabin_types(yacht_id,name,deck,bed_configuration,description,image,gallery_json,window_type,air_conditioning,ensuite,occupancy_modes_json,capacity,sort_order,active,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)',(i,data['name'],data.get('deck'),data.get('bed_configuration'),data.get('description'),data.get('image'),json.dumps(gallery),data.get('window_type'),1 if data.get('air_conditioning') else 0,1 if data.get('ensuite') else 0,json.dumps(modes),capacity,int(data.get('sort_order') or 0),ts,ts));audit(c,actor,'create','cabin_type',cur.lastrowid,{'yacht_id':i});c.commit();self.send_json({'id':cur.lastrowid},201);return
             if u.path.endswith('/departures') and u.path.startswith('/api/yachts/'):
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
@@ -1056,8 +1288,9 @@ class Handler(SimpleHTTPRequestHandler):
                 if not y['shared_enabled']:self.send_json({'error':'Yacht must have Liveaboard enabled'},400);return
                 try:v=departure_values(data)
                 except ValueError as e:self.send_json({'error':str(e)},400);return
-                cur=c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status)
-                                 VALUES(?,?,?,?,?,?,?,?,?,?,?)''',(i,v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status']))
+                cur=c.execute('''INSERT INTO departures(yacht_id,title,start_date,end_date,nights,cabins_total,cabins_available,places_total,places_available,price_pp,status,embarkation,disembarkation,itinerary_json,booking_conditions_json)
+                                 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',(i,v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status'],v['embarkation'],v['disembarkation'],json.dumps(v['itinerary']),json.dumps(v['booking_conditions'])))
+                for item in data.get('cabin_inventory',[]):c.execute('''INSERT INTO departure_cabin_inventory(departure_id,cabin_type_id,cabins_total,cabins_available,price_pp,list_price_pp,promotion_label,promotion_starts_at,promotion_ends_at,low_stock_threshold,single_occupancy_surcharge_percent,privacy_surcharge_percent) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)''',(cur.lastrowid,item['cabin_type_id'],item['cabins_total'],item['cabins_available'],item['price_pp'],item.get('list_price_pp') or item['price_pp'],item.get('promotion_label'),item.get('promotion_starts_at'),item.get('promotion_ends_at'),item.get('low_stock_threshold',4),item.get('single_occupancy_surcharge_percent',0),item.get('privacy_surcharge_percent',0)))
                 audit(c,actor,'create','departure',cur.lastrowid,{'yacht_id':i});c.commit();self.send_json({'id':cur.lastrowid},201);return
             if u.path=='/api/vendor/documents':
                 actor=self.require(c,['vendor','admin']);
@@ -1072,7 +1305,7 @@ class Handler(SimpleHTTPRequestHandler):
             if u.path=='/api/admin/settings':
                 actor=self.require(c,['admin']);
                 if not actor:return
-                allowed={'commission_rate':(0,100),'deposit_percent':(0,100),'hold_minutes':(5,1440),'currency':None}
+                allowed={'commission_rate':(0,100),'deposit_percent':(0,100),'hold_minutes':(5,1440),'currency':None,'booking_conditions_version':None,'booking_conditions_intro':None,'best_price_guarantee_enabled':None,'best_price_guarantee_text':None}
                 changed={}
                 for k,v in data.items():
                     if k not in allowed:continue
@@ -1100,6 +1333,16 @@ class Handler(SimpleHTTPRequestHandler):
                 actor=self.require(c,['admin']);
                 if not actor:return
                 i=u.path.split('/')[-1];c.execute('UPDATE yachts SET verified=?,verification_note=?,status=COALESCE(?,status),updated_at=? WHERE id=?',(1 if data.get('verified') else 0,data.get('verification_note'),data.get('status'),now_iso(),i));audit(c,actor,'yacht_verification','yacht',i,{'verified':bool(data.get('verified'))});c.commit();self.send_json({'ok':True});return
+            if u.path.startswith('/api/cabin-types/'):
+                actor=self.require(c,['vendor','admin']);
+                if not actor:return
+                i=u.path.split('/')[-1];current=rowdict(c.execute('SELECT t.*,y.vendor_id FROM yacht_cabin_types t JOIN yachts y ON y.id=t.yacht_id WHERE t.id=?',(i,)).fetchone())
+                if not current or actor.get('role')=='vendor' and current['vendor_id']!=actor.get('vendor_id'):self.send_json({'error':'Cabin type not found'},404);return
+                merged={**current,**data}
+                try:capacity=int(merged.get('capacity'))
+                except:self.send_json({'error':'A valid cabin capacity is required'},400);return
+                gallery=merged.get('gallery') if isinstance(merged.get('gallery'),list) else ([merged.get('image')] if merged.get('image') else []);modes=[x for x in merged.get('occupancy_modes',[]) if x in ('shared','private')] or ['private']
+                c.execute('UPDATE yacht_cabin_types SET name=?,deck=?,bed_configuration=?,description=?,image=?,gallery_json=?,window_type=?,air_conditioning=?,ensuite=?,occupancy_modes_json=?,capacity=?,sort_order=?,updated_at=? WHERE id=?',(merged.get('name'),merged.get('deck'),merged.get('bed_configuration'),merged.get('description'),merged.get('image'),json.dumps(gallery),merged.get('window_type'),1 if merged.get('air_conditioning') else 0,1 if merged.get('ensuite') else 0,json.dumps(modes),capacity,int(merged.get('sort_order') or 0),now_iso(),i));audit(c,actor,'update','cabin_type',i,{'fields':list(data.keys())});c.commit();self.send_json({'ok':True});return
             if u.path.startswith('/api/departures/'):
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
@@ -1113,8 +1356,9 @@ class Handler(SimpleHTTPRequestHandler):
                 try:v=departure_values(merged)
                 except ValueError as e:self.send_json({'error':str(e)},400);return
                 c.execute('''UPDATE departures SET title=?,start_date=?,end_date=?,nights=?,cabins_total=?,cabins_available=?,
-                             places_total=?,places_available=?,price_pp=?,status=? WHERE id=?''',
-                          (v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status'],i))
+                             places_total=?,places_available=?,price_pp=?,status=?,embarkation=?,disembarkation=?,itinerary_json=?,booking_conditions_json=? WHERE id=?''',
+                          (v['title'],v['start_date'],v['end_date'],v['nights'],v['cabins_total'],v['cabins_available'],v['places_total'],v['places_available'],v['price_pp'],v['status'],v['embarkation'],v['disembarkation'],json.dumps(v['itinerary']),json.dumps(v['booking_conditions']),i))
+                for item in data.get('cabin_inventory',[]):c.execute('''INSERT INTO departure_cabin_inventory(departure_id,cabin_type_id,cabins_total,cabins_available,price_pp,list_price_pp,promotion_label,promotion_starts_at,promotion_ends_at,low_stock_threshold,single_occupancy_surcharge_percent,privacy_surcharge_percent) VALUES(?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(departure_id,cabin_type_id) DO UPDATE SET cabins_total=excluded.cabins_total,cabins_available=excluded.cabins_available,price_pp=excluded.price_pp,list_price_pp=excluded.list_price_pp,promotion_label=excluded.promotion_label,promotion_starts_at=excluded.promotion_starts_at,promotion_ends_at=excluded.promotion_ends_at,low_stock_threshold=excluded.low_stock_threshold,single_occupancy_surcharge_percent=excluded.single_occupancy_surcharge_percent,privacy_surcharge_percent=excluded.privacy_surcharge_percent''',(i,item['cabin_type_id'],item['cabins_total'],item['cabins_available'],item['price_pp'],item.get('list_price_pp') or item['price_pp'],item.get('promotion_label'),item.get('promotion_starts_at'),item.get('promotion_ends_at'),item.get('low_stock_threshold',4),item.get('single_occupancy_surcharge_percent',0),item.get('privacy_surcharge_percent',0)))
                 audit(c,actor,'update','departure',i,{'fields':list(data.keys())});c.commit();self.send_json({'ok':True});return
             if u.path.startswith('/api/yachts/'):
                 actor=self.require(c,['vendor','admin']);
@@ -1124,9 +1368,13 @@ class Handler(SimpleHTTPRequestHandler):
                 if actor.get('role')=='vendor' and actor.get('vendor_id') and y['vendor_id']!=actor['vendor_id']:self.send_json({'error':'Forbidden'},403);return
                 try:private_enabled,shared_enabled=model_flags(data,y)
                 except ValueError as e:self.send_json({'error':str(e)},400);return
+                try:private=private_settings(data,y)
+                except ValueError as e:self.send_json({'error':str(e)},400);return
+                for key,value in private.items():
+                    if key in data:data[key]=value
                 if 'private_enabled' in data:data['private_enabled']=private_enabled
                 if 'shared_enabled' in data:data['shared_enabled']=shared_enabled
-                allowed=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','shared_rate']
+                allowed=['name','type','status','private_enabled','shared_enabled','guests','cabins','crew','length_m','year_built','year_refit','description','image','private_rate','private_rate_public','private_instant_booking','private_min_nights','private_max_nights','shared_rate']
                 sets=[];vals=[]
                 for f in allowed:
                     if f in data:sets.append(f+'=?');vals.append(data[f])
