@@ -8,3 +8,4 @@ public/
 __pycache__/
 *.pyc
 marketplace.db
+.DS_Store

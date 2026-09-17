@@ -33,3 +33,6 @@ INSERT INTO bookings(id,booking_ref,yacht_id,departure_id,mode,guest_name,email,
 VALUES(90,'EXPIRED-SEARCH-HOLD',1,1,'shared','Expired Hold','expired@example.com',12,date('now','+90 days'),date('now','+95 days'),5,3600,'cancelled',datetime('now','-1 hour'),datetime('now','-2 hours'),datetime('now','-2 hours'));
 INSERT INTO availability_holds(id,booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at)
 VALUES(90,90,1,1,date('now','+90 days'),date('now','+95 days'),12,6,datetime('now','-1 hour'),'active',datetime('now','-2 hours'));
+
+-- Yacht 1 is the fixture used by private booking/payment tests.
+UPDATE yachts SET private_rate_public=1,private_instant_booking=1 WHERE id=1;

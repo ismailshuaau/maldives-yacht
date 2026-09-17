@@ -190,8 +190,12 @@ CREATE TABLE IF NOT EXISTS bookings(
  expires_at TEXT,
  created_at TEXT,
  updated_at TEXT,
+ user_id INTEGER,
+ access_token_hash TEXT,
+ idempotency_key TEXT,
  FOREIGN KEY(yacht_id) REFERENCES yachts(id),
- FOREIGN KEY(departure_id) REFERENCES departures(id)
+ FOREIGN KEY(departure_id) REFERENCES departures(id),
+ FOREIGN KEY(user_id) REFERENCES users(id)
 );
 CREATE TABLE IF NOT EXISTS availability_holds(
  id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -314,6 +318,73 @@ CREATE TABLE IF NOT EXISTS audit_logs(
  created_at TEXT NOT NULL,
  FOREIGN KEY(actor_user_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS wishlists(
+ user_id INTEGER NOT NULL,
+ yacht_id INTEGER NOT NULL,
+ created_at TEXT NOT NULL,
+ PRIMARY KEY(user_id,yacht_id),
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+ FOREIGN KEY(yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS reviews(
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ booking_id INTEGER NOT NULL UNIQUE,
+ user_id INTEGER NOT NULL,
+ yacht_id INTEGER NOT NULL,
+ rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5),
+ title TEXT,
+ body TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','approved','rejected','hidden')),
+ admin_note TEXT,
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL,
+ moderated_at TEXT,
+ moderated_by INTEGER,
+ FOREIGN KEY(booking_id) REFERENCES bookings(id) ON DELETE CASCADE,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+ FOREIGN KEY(yacht_id) REFERENCES yachts(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS support_requests(
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ user_id INTEGER,
+ name TEXT NOT NULL,
+ email TEXT NOT NULL,
+ phone TEXT,
+ subject TEXT NOT NULL,
+ message TEXT NOT NULL,
+ status TEXT NOT NULL DEFAULT 'new' CHECK(status IN ('new','open','waiting','resolved','closed')),
+ admin_notes TEXT,
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL,
+ FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS support_profiles(
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL,
+ title TEXT NOT NULL,
+ bio TEXT,
+ image_url TEXT,
+ email TEXT,
+ phone TEXT,
+ active INTEGER NOT NULL DEFAULT 1,
+ sort_order INTEGER NOT NULL DEFAULT 0,
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS trust_marks(
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ name TEXT NOT NULL,
+ attribution TEXT NOT NULL,
+ image_url TEXT,
+ link_url TEXT,
+ verified INTEGER NOT NULL DEFAULT 0,
+ active INTEGER NOT NULL DEFAULT 1,
+ sort_order INTEGER NOT NULL DEFAULT 0,
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_reviews_public ON reviews(status,created_at);
+CREATE INDEX IF NOT EXISTS idx_support_user ON support_requests(user_id,created_at);
 CREATE INDEX IF NOT EXISTS idx_bookings_yacht_dates ON bookings(yacht_id,start_date,end_date,status);
 CREATE INDEX IF NOT EXISTS idx_holds_yacht_dates ON availability_holds(yacht_id,start_date,end_date,status);
 CREATE INDEX IF NOT EXISTS idx_payments_booking ON payments(booking_id,status);
@@ -460,8 +531,10 @@ def init_db():
         ('deposit_amount','REAL NOT NULL DEFAULT 0'), ('amount_paid','REAL NOT NULL DEFAULT 0'),
         ('balance_due','REAL NOT NULL DEFAULT 0'), ('currency',"TEXT NOT NULL DEFAULT 'USD'"),
         ('conditions_version','TEXT'),('conditions_snapshot_json','TEXT'),('conditions_accepted_at','TEXT'),
+        ('user_id','INTEGER'),('access_token_hash','TEXT'),('idempotency_key','TEXT'),
         ('payment_status',"TEXT DEFAULT 'unpaid'"), ('expires_at','TEXT'), ('updated_at','TEXT')]:
         add_col(c, 'bookings', name, ddl)
+    c.execute('CREATE INDEX IF NOT EXISTS idx_bookings_user ON bookings(user_id,created_at)')
     departure_cols=table_cols(c, 'departures')
     added_places_total='places_total' not in departure_cols
     added_places_available='places_available' not in departure_cols
@@ -497,7 +570,7 @@ def init_db():
         add_col(c, 'payments', name, ddl)
 
     ts = now_iso()
-    defaults = {'commission_rate':'30','deposit_percent':'30','hold_minutes':'30','currency':'USD','booking_conditions_version':'2026-09-17','booking_conditions_intro':'Reservations create a temporary availability hold. No payment is taken until you choose to continue to payment.','best_price_guarantee_enabled':'0','best_price_guarantee_text':''}
+    defaults = {'commission_rate':'30','deposit_percent':'30','hold_minutes':'30','currency':'USD','booking_conditions_version':'2026-09-17','booking_conditions_intro':'Reservations create a temporary availability hold. No payment is taken until you choose to continue to payment.','best_price_guarantee_enabled':'0','best_price_guarantee_text':'','hero_eyebrow':'Private yacht charters · liveaboards','hero_title':'Discover the Maldives on a liveaboard','hero_text':'Choose the whole yacht or join a scheduled liveaboard, then shape the experience around you.','support_always_available':'0'}
     for k,v in defaults.items():
         c.execute('INSERT OR IGNORE INTO platform_settings(key,value,updated_at) VALUES(?,?,?)', (k,v,ts))
 
@@ -964,6 +1037,10 @@ class Handler(SimpleHTTPRequestHandler):
             # Demo compatibility: protected mutations remain usable locally.
             return {'id':None,'role':'admin' if 'admin' in roles else ('vendor' if 'vendor' in roles else 'guest'),'vendor_id':1 if 'vendor' in roles else None,'name':'Demo mode'}
         self.send_json({'error':'Authentication required','roles':roles},401);return None
+    def require_account(self,c,roles=('guest','vendor','admin')):
+        user=self.actor(c)
+        if user and user.get('role') in roles:return user
+        self.send_json({'error':'Sign in required'},401);return None
     def do_GET(self):
         u=urllib.parse.urlparse(self.path);q=urllib.parse.parse_qs(u.query)
         if not u.path.startswith('/api/'):return super().do_GET()
@@ -974,6 +1051,55 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json({'conditions_version':setting(c,'booking_conditions_version','2026-09-17'),'conditions_intro':setting(c,'booking_conditions_intro',''),'best_price_guarantee_enabled':setting(c,'best_price_guarantee_enabled','0')=='1','best_price_guarantee_text':setting(c,'best_price_guarantee_text','')});return
             if u.path=='/api/auth/me':
                 me=self.actor(c);self.send_json(me or {'authenticated':False},200 if me else 401);return
+            if u.path=='/api/homepage':
+                stats={
+                    'live_yachts':c.execute("SELECT COUNT(*) FROM yachts WHERE status='live' AND verified=1").fetchone()[0],
+                    'departures':c.execute("""SELECT COUNT(*) FROM departures d JOIN yachts y ON y.id=d.yacht_id
+                        WHERE d.status='open' AND d.mock_generated=0 AND date(d.end_date)>=date('now') AND y.status='live' AND y.verified=1""").fetchone()[0],
+                    'operators':c.execute("""SELECT COUNT(DISTINCT v.id) FROM vendors v JOIN yachts y ON y.vendor_id=v.id
+                        WHERE v.verified=1 AND v.status='verified' AND y.status='live' AND y.verified=1""").fetchone()[0],
+                    'bookings':c.execute("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed','completed')").fetchone()[0],
+                    'verified_reviews':c.execute("SELECT COUNT(*) FROM reviews WHERE status='approved'").fetchone()[0]
+                }
+                reviews=[rowdict(r) for r in c.execute("""SELECT r.id,r.rating,r.title,r.body,r.created_at,y.id yacht_id,y.name yacht_name,
+                    b.start_date travel_date,b.guest_name FROM reviews r JOIN bookings b ON b.id=r.booking_id JOIN yachts y ON y.id=r.yacht_id
+                    WHERE r.status='approved' AND b.status='completed' ORDER BY r.moderated_at DESC,r.id DESC LIMIT 12""").fetchall()]
+                for review in reviews:
+                    review['guest_initials']=''.join(part[0].upper() for part in str(review.pop('guest_name','Guest')).split()[:2] if part) or 'G'
+                assurance=setting(c,'best_price_guarantee_enabled','0')=='1'
+                self.send_json({'hero':{'eyebrow':setting(c,'hero_eyebrow','Private yacht charters · liveaboards'),'title':setting(c,'hero_title','Discover the Maldives on a liveaboard'),'text':setting(c,'hero_text','Choose the whole yacht or join a scheduled liveaboard, then shape the experience around you.')},
+                    'assurances':[{'key':'best_price','text':setting(c,'best_price_guarantee_text','')}] if assurance else [],'statistics':stats,
+                    'support_profiles':[rowdict(r) for r in c.execute('SELECT * FROM support_profiles WHERE active=1 ORDER BY sort_order,id').fetchall()],
+                    'support_always_available':setting(c,'support_always_available','0')=='1','reviews':reviews,
+                    'trust_marks':[rowdict(r) for r in c.execute('SELECT * FROM trust_marks WHERE active=1 AND verified=1 ORDER BY sort_order,id').fetchall()]});return
+            if u.path=='/api/account/dashboard':
+                actor=self.require_account(c);
+                if not actor:return
+                bookings=[rowdict(r) for r in c.execute("""SELECT b.*,y.name yacht_name,y.image yacht_image,
+                    CASE WHEN b.status='completed' AND r.id IS NULL THEN 1 ELSE 0 END review_eligible,r.id review_id,r.status review_status
+                    FROM bookings b JOIN yachts y ON y.id=b.yacht_id LEFT JOIN reviews r ON r.booking_id=b.id
+                    WHERE b.user_id=? ORDER BY b.created_at DESC""",(actor['id'],)).fetchall()]
+                for booking in bookings:
+                    booking.pop('access_token_hash',None);booking.pop('idempotency_key',None)
+                saved=[rowdict(r) for r in c.execute('SELECT y.* FROM wishlists w JOIN yachts y ON y.id=w.yacht_id WHERE w.user_id=? ORDER BY w.created_at DESC',(actor['id'],)).fetchall()]
+                for yacht in saved:public_yacht(yacht)
+                support=[rowdict(r) for r in c.execute('SELECT * FROM support_requests WHERE user_id=? ORDER BY created_at DESC',(actor['id'],)).fetchall()]
+                self.send_json({'user':{k:actor.get(k) for k in ('id','name','email','role')},'bookings':bookings,'saved_yachts':saved,'support_requests':support});return
+            if u.path=='/api/account/wishlist':
+                actor=self.require_account(c);
+                if not actor:return
+                items=[rowdict(r) for r in c.execute('SELECT y.* FROM wishlists w JOIN yachts y ON y.id=w.yacht_id WHERE w.user_id=? ORDER BY w.created_at DESC',(actor['id'],)).fetchall()]
+                for item in items:public_yacht(item)
+                self.send_json(items);return
+            if u.path=='/api/account/support':
+                actor=self.require_account(c);
+                if not actor:return
+                self.send_json([rowdict(r) for r in c.execute('SELECT * FROM support_requests WHERE user_id=? ORDER BY created_at DESC',(actor['id'],)).fetchall()]);return
+            if u.path in ('/api/admin/reviews','/api/admin/support','/api/admin/support-profiles','/api/admin/trust-marks'):
+                if not self.require(c,['admin']):return
+                table={'/api/admin/reviews':'reviews','/api/admin/support':'support_requests','/api/admin/support-profiles':'support_profiles','/api/admin/trust-marks':'trust_marks'}[u.path]
+                sql='SELECT * FROM '+table+' ORDER BY '+('sort_order,id' if table in ('support_profiles','trust_marks') else 'id DESC')
+                self.send_json([rowdict(r) for r in c.execute(sql).fetchall()]);return
             if u.path=='/api/search/options':
                 types=[row['type'] for row in c.execute("SELECT DISTINCT type FROM yachts WHERE status='live' AND verified=1 AND type<>'' ORDER BY type").fetchall()]
                 self.send_json({'types':types,'amenities':AMENITY_CHOICES});return
@@ -1159,6 +1285,51 @@ class Handler(SimpleHTTPRequestHandler):
                 auth=self.headers.get('Authorization','');token=auth.split(' ',1)[1].strip() if auth.lower().startswith('bearer ') else ''
                 if token:c.execute('DELETE FROM sessions WHERE token_hash=?',(hashlib.sha256(token.encode()).hexdigest(),));c.commit()
                 self.send_json({'ok':True});return
+            if u.path=='/api/account/wishlist':
+                actor=self.require_account(c);
+                if not actor:return
+                try:yacht_id=int(data.get('yacht_id'))
+                except:self.send_json({'error':'Valid yacht_id is required'},400);return
+                if not c.execute("SELECT 1 FROM yachts WHERE id=? AND status='live' AND verified=1",(yacht_id,)).fetchone():self.send_json({'error':'Yacht not found'},404);return
+                c.execute('INSERT OR IGNORE INTO wishlists(user_id,yacht_id,created_at) VALUES(?,?,?)',(actor['id'],yacht_id,ts));audit(c,actor,'save','yacht',yacht_id);c.commit();self.send_json({'ok':True,'yacht_id':yacht_id},201);return
+            if u.path=='/api/account/bookings/claim':
+                actor=self.require_account(c);
+                if not actor:return
+                ref=str(data.get('booking_ref') or '').strip().upper();token=str(data.get('booking_token') or '')
+                booking=c.execute('SELECT * FROM bookings WHERE booking_ref=?',(ref,)).fetchone()
+                valid=booking and booking['access_token_hash'] and hmac.compare_digest(str(booking['access_token_hash']),hashlib.sha256(token.encode()).hexdigest())
+                if not valid:self.send_json({'error':'Booking reference or access token is invalid'},403);return
+                if booking['user_id'] and booking['user_id']!=actor['id']:self.send_json({'error':'Booking is already attached to another account'},409);return
+                c.execute('UPDATE bookings SET user_id=?,updated_at=? WHERE id=?',(actor['id'],ts,booking['id']));audit(c,actor,'claim','booking',booking['id']);c.commit();self.send_json({'ok':True,'booking_id':booking['id']});return
+            if u.path=='/api/account/reviews':
+                actor=self.require_account(c);
+                if not actor:return
+                try:booking_id=int(data.get('booking_id'));rating=int(data.get('rating'))
+                except:self.send_json({'error':'Valid booking_id and rating are required'},400);return
+                title=str(data.get('title') or '').strip()[:120];review_body=str(data.get('body') or '').strip()
+                if rating<1 or rating>5 or len(review_body)<20 or len(review_body)>4000:self.send_json({'error':'Rating must be 1–5 and review must be 20–4000 characters'},400);return
+                booking=c.execute("SELECT * FROM bookings WHERE id=? AND user_id=? AND status='completed'",(booking_id,actor['id'])).fetchone()
+                if not booking:self.send_json({'error':'Only your completed bookings can be reviewed'},403);return
+                if c.execute('SELECT 1 FROM reviews WHERE booking_id=?',(booking_id,)).fetchone():self.send_json({'error':'This booking has already been reviewed'},409);return
+                cur=c.execute("INSERT INTO reviews(booking_id,user_id,yacht_id,rating,title,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'pending',?,?)",(booking_id,actor['id'],booking['yacht_id'],rating,title or None,review_body,ts,ts));audit(c,actor,'submit','review',cur.lastrowid);c.commit();self.send_json({'id':cur.lastrowid,'status':'pending'},201);return
+            if u.path=='/api/support':
+                actor=self.actor(c);name=str(data.get('name') or (actor or {}).get('name') or '').strip();email=str(data.get('email') or (actor or {}).get('email') or '').strip().lower();subject=str(data.get('subject') or '').strip();message=str(data.get('message') or '').strip();phone=str(data.get('phone') or '').strip()
+                if not name or '@' not in email or len(subject)<3 or len(subject)>160 or len(message)<10 or len(message)>5000:self.send_json({'error':'Name, valid email, subject and a message of 10–5000 characters are required'},400);return
+                cur=c.execute("INSERT INTO support_requests(user_id,name,email,phone,subject,message,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'new',?,?)",((actor or {}).get('id'),name,email,phone or None,subject,message,ts,ts));audit(c,actor,'create','support_request',cur.lastrowid);c.commit();self.send_json({'id':cur.lastrowid,'status':'new'},201);return
+            if u.path in ('/api/admin/support-profiles','/api/admin/trust-marks'):
+                actor=self.require(c,['admin']);
+                if not actor:return
+                name=str(data.get('name') or '').strip()
+                if not name:self.send_json({'error':'Name is required'},400);return
+                if u.path.endswith('support-profiles'):
+                    title=str(data.get('title') or '').strip()
+                    if not title:self.send_json({'error':'Title is required'},400);return
+                    cur=c.execute('INSERT INTO support_profiles(name,title,bio,image_url,email,phone,active,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)',(name,title,str(data.get('bio') or '')[:1000],str(data.get('image_url') or '') or None,str(data.get('email') or '') or None,str(data.get('phone') or '') or None,1 if data.get('active',True) else 0,int(data.get('sort_order') or 0),ts,ts))
+                else:
+                    attribution=str(data.get('attribution') or '').strip()
+                    if not attribution:self.send_json({'error':'Attribution is required'},400);return
+                    cur=c.execute('INSERT INTO trust_marks(name,attribution,image_url,link_url,verified,active,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)',(name,attribution,str(data.get('image_url') or '') or None,str(data.get('link_url') or '') or None,1 if data.get('verified') else 0,1 if data.get('active',True) else 0,int(data.get('sort_order') or 0),ts,ts))
+                audit(c,actor,'create',u.path.rsplit('/',1)[-1],cur.lastrowid);c.commit();self.send_json({'id':cur.lastrowid},201);return
             if u.path=='/api/yachts':
                 actor=self.require(c,['vendor','admin']);
                 if not actor:return
@@ -1190,10 +1361,11 @@ class Handler(SimpleHTTPRequestHandler):
                 start=selection['start_date'];end=selection['end_date'];nights=selection['nights'];total=selection['total_amount']
                 deposit_percent=selection['deposit_percent'];deposit=selection['deposit_amount'];currency=selection['currency']
                 ref='ATL-'+datetime.now(timezone.utc).strftime('%y%m%d')+'-'+secrets.token_hex(3).upper();hold_minutes=int(float(setting(c,'hold_minutes','30',True)))
+                booking_token=secrets.token_urlsafe(32);booking_token_hash=hashlib.sha256(booking_token.encode()).hexdigest();booking_actor=self.actor(c)
                 expires=(datetime.now(timezone.utc)+timedelta(minutes=hold_minutes)).isoformat()
-                cur=c.execute('''INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at)
-                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?)''',
-                    (ref,yacht['id'],departure_id,mode,data.get('guest_name'),data.get('email'),data.get('phone'),guests,cabins_booked,start,end,nights,total,deposit_percent,deposit,total,currency,data.get('notes'),expires,ts,ts))
+                cur=c.execute('''INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at,user_id,access_token_hash)
+                    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?,?,?,?)''',
+                    (ref,yacht['id'],departure_id,mode,data.get('guest_name'),data.get('email'),data.get('phone'),guests,cabins_booked,start,end,nights,total,deposit_percent,deposit,total,currency,data.get('notes'),expires,ts,ts,(booking_actor or {}).get('id'),booking_token_hash))
                 bid=cur.lastrowid
                 conditions_snapshot={'version':conditions_version,'platform':setting(c,'booking_conditions_intro',''),'departure':(selection.get('departure') or {}).get('booking_conditions') or {}}
                 c.execute('UPDATE bookings SET conditions_version=?,conditions_snapshot_json=?,conditions_accepted_at=? WHERE id=?',(conditions_version,json.dumps(conditions_snapshot),ts,bid))
@@ -1206,7 +1378,7 @@ class Handler(SimpleHTTPRequestHandler):
                 for position,traveler in enumerate(traveler_rows[:guests]):
                     if isinstance(traveler,dict):c.execute('INSERT INTO booking_guests(booking_id,full_name,rooming_preference,notes,sort_order) VALUES(?,?,?,?,?)',(bid,str(traveler.get('full_name') or '')[:120],str(traveler.get('rooming_preference') or '')[:80],str(traveler.get('notes') or '')[:500],position))
                 notify(c,f'New {mode} booking request {ref} for {yacht["name"]}.','New booking request',vendor_id=yacht['vendor_id'],booking_id=bid)
-                audit(c,self.actor(c),'create','booking',bid,{'ref':ref,'total':total});c.commit();self.send_json({'id':bid,'booking_ref':ref,'status':'pending_operator','total_amount':total,'deposit_percent':deposit_percent,'deposit_amount':deposit,'balance_due':total,'currency':currency,'hold_expires_at':expires},201);return
+                audit(c,booking_actor,'create','booking',bid,{'ref':ref,'total':total});c.commit();self.send_json({'id':bid,'booking_ref':ref,'status':'pending_operator','total_amount':total,'deposit_percent':deposit_percent,'deposit_amount':deposit,'balance_due':total,'currency':currency,'hold_expires_at':expires,'booking_token':booking_token},201);return
             if u.path=='/api/payments/create':
                 booking_id=data.get('booking_id');b=rowdict(c.execute('SELECT b.*,y.private_rate_public,y.private_instant_booking FROM bookings b JOIN yachts y ON y.id=b.yacht_id WHERE b.id=?',(booking_id,)).fetchone())
                 if not b:self.send_json({'error':'Booking not found'},404);return
@@ -1300,12 +1472,44 @@ class Handler(SimpleHTTPRequestHandler):
         finally:c.close()
 
     def do_PUT(self):
-        u=urllib.parse.urlparse(self.path);data=self.read_json();c=db_conn()
+        u=urllib.parse.urlparse(self.path);data=self.read_json();c=db_conn();ts=now_iso()
         try:
+            if u.path.startswith('/api/admin/reviews/'):
+                actor=self.require(c,['admin']);
+                if not actor:return
+                try:i=int(u.path.rsplit('/',1)[-1])
+                except:self.send_json({'error':'Not found'},404);return
+                status=str(data.get('status') or '')
+                if status not in ('approved','rejected','hidden'):self.send_json({'error':'Invalid review status'},400);return
+                result=c.execute('UPDATE reviews SET status=?,admin_note=?,moderated_at=?,moderated_by=?,updated_at=? WHERE id=?',(status,str(data.get('admin_note') or '')[:1000] or None,ts,actor['id'],ts,i))
+                if not result.rowcount:self.send_json({'error':'Review not found'},404);return
+                audit(c,actor,'moderate','review',i,{'status':status});c.commit();self.send_json({'ok':True,'status':status});return
+            if u.path.startswith('/api/admin/support/'):
+                actor=self.require(c,['admin']);
+                if not actor:return
+                try:i=int(u.path.rsplit('/',1)[-1])
+                except:self.send_json({'error':'Not found'},404);return
+                status=str(data.get('status') or '')
+                if status not in ('new','open','waiting','resolved','closed'):self.send_json({'error':'Invalid support status'},400);return
+                result=c.execute('UPDATE support_requests SET status=?,admin_notes=?,updated_at=? WHERE id=?',(status,str(data.get('admin_notes') or '')[:4000] or None,ts,i))
+                if not result.rowcount:self.send_json({'error':'Support request not found'},404);return
+                audit(c,actor,'update','support_request',i,{'status':status});c.commit();self.send_json({'ok':True,'status':status});return
+            if u.path.startswith('/api/admin/support-profiles/') or u.path.startswith('/api/admin/trust-marks/'):
+                actor=self.require(c,['admin']);
+                if not actor:return
+                try:i=int(u.path.rsplit('/',1)[-1])
+                except:self.send_json({'error':'Not found'},404);return
+                table='support_profiles' if '/support-profiles/' in u.path else 'trust_marks';allowed=('active','sort_order') if table=='support_profiles' else ('active','verified','sort_order');sets=[];values=[]
+                for key in allowed:
+                    if key in data:sets.append(key+'=?');values.append(int(data[key]) if key=='sort_order' else (1 if data[key] else 0))
+                if not sets:self.send_json({'error':'No supported fields supplied'},400);return
+                sets.append('updated_at=?');values.extend([ts,i]);result=c.execute('UPDATE '+table+' SET '+','.join(sets)+' WHERE id=?',values)
+                if not result.rowcount:self.send_json({'error':'Not found'},404);return
+                audit(c,actor,'update',table,i,{k:data[k] for k in allowed if k in data});c.commit();self.send_json({'ok':True});return
             if u.path=='/api/admin/settings':
                 actor=self.require(c,['admin']);
                 if not actor:return
-                allowed={'commission_rate':(0,100),'deposit_percent':(0,100),'hold_minutes':(5,1440),'currency':None,'booking_conditions_version':None,'booking_conditions_intro':None,'best_price_guarantee_enabled':None,'best_price_guarantee_text':None}
+                allowed={'commission_rate':(0,100),'deposit_percent':(0,100),'hold_minutes':(5,1440),'currency':None,'booking_conditions_version':None,'booking_conditions_intro':None,'best_price_guarantee_enabled':None,'best_price_guarantee_text':None,'hero_eyebrow':None,'hero_title':None,'hero_text':None,'support_always_available':None}
                 changed={}
                 for k,v in data.items():
                     if k not in allowed:continue
@@ -1397,6 +1601,18 @@ class Handler(SimpleHTTPRequestHandler):
                 notify(c,f'Booking {b["booking_ref"]} is now {status}.','Booking update',booking_id=int(i),recipient=b['email'])
                 audit(c,actor,'booking_status','booking',i,{'status':status});c.commit();self.send_json({'ok':True,'status':status});return
             self.send_json({'error':'Unknown endpoint'},404)
+        finally:c.close()
+
+    def do_DELETE(self):
+        u=urllib.parse.urlparse(self.path);c=db_conn()
+        try:
+            match=u.path.startswith('/api/account/wishlist/') and u.path.rsplit('/',1)[-1]
+            if not match:self.send_json({'error':'Unknown endpoint'},404);return
+            actor=self.require_account(c)
+            if not actor:return
+            try:yacht_id=int(match)
+            except:self.send_json({'error':'Valid yacht id is required'},400);return
+            c.execute('DELETE FROM wishlists WHERE user_id=? AND yacht_id=?',(actor['id'],yacht_id));audit(c,actor,'unsave','yacht',yacht_id);c.commit();self.send_json({'ok':True})
         finally:c.close()
 
 

@@ -24,7 +24,7 @@ DROP TRIGGER IF EXISTS prevent_cabin_category_overbooking;
 CREATE TRIGGER prevent_cabin_category_overbooking
 BEFORE INSERT ON availability_hold_cabin_items
 BEGIN
- SELECT CASE WHEN NEW.inventory_units + COALESCE((
+ SELECT (CASE WHEN NEW.inventory_units + COALESCE((
    SELECT SUM(CASE WHEN i.inventory_units>0 THEN i.inventory_units ELSE i.cabins*c.capacity END)
    FROM availability_hold_cabin_items i JOIN availability_holds h ON h.id=i.hold_id
    JOIN yacht_cabin_types c ON c.id=i.cabin_type_id
@@ -34,7 +34,7 @@ BEGIN
    SELECT d.cabins_available*c.capacity FROM departure_cabin_inventory d
    JOIN yacht_cabin_types c ON c.id=d.cabin_type_id
    WHERE d.departure_id=NEW.departure_id AND d.cabin_type_id=NEW.cabin_type_id
- ),0) THEN RAISE(ABORT,'cabin category inventory unavailable') END;
+ ),0) THEN RAISE(ABORT,'cabin category inventory unavailable') END);
 END;
 
 ALTER TABLE bookings ADD COLUMN conditions_version TEXT;

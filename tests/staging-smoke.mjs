@@ -20,11 +20,7 @@ assert.equal(result.response.status, 200);
 assert.equal(result.data?.ok, true);
 assert.equal(result.data?.environment, 'staging');
 assert.equal(result.data?.auth_enforced, true);
-assert.deepEqual(
-  result.data?.demo_accounts?.map(account => account.role).sort(),
-  ['admin', 'vendor'],
-  'staging health should expose the demo accounts',
-);
+assert.equal(result.data?.demo_accounts, undefined, 'health must not expose demo credentials');
 
 const redirectPath = '/api/health?cutover=www&path=preserved';
 const redirectResponse = await fetch(`https://www.maldivesliveaboardbooking.com${redirectPath}`, { redirect: 'manual' });

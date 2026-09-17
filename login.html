@@ -11,7 +11,8 @@
   <main class="section"><div class="wrap" style="max-width:560px"><div class="panel">
     <div class="eyebrow">Secure access</div>
     <h1 style="font-size:42px;margin:10px 0">Sign in</h1>
-    <p class="sub">Operator and admin tools require an authenticated account when production authentication is enabled.</p>
+    <p class="sub">Access bookings, save yachts, write verified reviews, and follow support requests.</p>
+    <div class="authTabs" role="tablist" aria-label="Account access"><button id="signInTab" class="bookingModelTab active" type="button" role="tab" aria-selected="true">Sign in</button><button id="registerTab" class="bookingModelTab" type="button" role="tab" aria-selected="false">Create account</button></div>
     <form id="loginForm" class="formgrid" style="margin-top:24px">
       <div id="demoAccounts" class="demoAccounts span2" hidden>
         <div class="muted">Fill in a demo account</div>
@@ -21,13 +22,21 @@
       <div class="control span2"><label for="loginPassword">Password</label><input id="loginPassword" name="password" type="password" autocomplete="current-password" required></div>
       <div class="span2"><button class="btn sea" style="width:100%">Sign in</button><div id="msg" class="muted" style="margin-top:10px"></div></div>
     </form>
-    <div class="notice" style="margin-top:20px">Authorized operators and administrators can sign in with credentials issued by the platform.</div>
+    <form id="registerForm" class="formgrid" style="margin-top:24px" hidden>
+      <div class="control span2"><label for="registerName">Full name</label><input id="registerName" name="name" autocomplete="name" maxlength="120" required></div>
+      <div class="control span2"><label for="registerEmail">Email</label><input id="registerEmail" name="email" type="email" autocomplete="email" required></div>
+      <div class="control span2"><label for="registerPassword">Password</label><input id="registerPassword" name="password" type="password" autocomplete="new-password" minlength="10" required><small>At least 10 characters.</small></div>
+      <div class="span2"><button class="btn sea" style="width:100%">Create account</button><div id="registerMsg" class="muted" style="margin-top:10px"></div></div>
+    </form>
   </div></div></main>
   <script src="assets/app.js"></script>
   <script>
     const params=new URLSearchParams(location.search);
     (async()=>{try{const health=await api('/api/health');const accounts=Array.isArray(health.demo_accounts)?health.demo_accounts.filter(account=>['admin','vendor'].includes(account?.role)&&typeof account.email==='string'&&typeof account.password==='string'):[];if(!accounts.length)return;for(const account of accounts){const button=document.createElement('button');button.type='button';button.className='btn ghost';button.textContent=account.role==='admin'?'Admin demo':'Vendor demo';button.addEventListener('click',()=>{loginEmail.value=account.email;loginPassword.value=account.password;msg.textContent=''});demoAccountButtons.append(button)}demoAccounts.hidden=false}catch{}})();
-    loginForm.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Signing in…';const d=Object.fromEntries(new FormData(e.target));try{const r=await api('/api/auth/login',{method:'POST',body:JSON.stringify(d)});setAuth(r.token,r.user);const fallback=r.user.role==='admin'?'admin.html':r.user.role==='vendor'?'vendor.html':'index.html';let target=fallback;try{const requested=new URL(params.get('next')||fallback,location.origin);if(requested.origin===location.origin)target=requested.pathname+requested.search+requested.hash}catch{}location.href=target}catch(err){msg.textContent=err.message}});
+    function showAuth(register){loginForm.hidden=register;registerForm.hidden=!register;signInTab.classList.toggle('active',!register);registerTab.classList.toggle('active',register);signInTab.setAttribute('aria-selected',String(!register));registerTab.setAttribute('aria-selected',String(register))}signInTab.onclick=()=>showAuth(false);registerTab.onclick=()=>showAuth(true);if(params.get('register')==='1')showAuth(true);
+    async function afterAuth(r){setAuth(r.token,r.user);const pending=sessionStorage.getItem('atolle_pending_claim');if(pending){try{await api('/api/account/bookings/claim',{method:'POST',body:pending});sessionStorage.removeItem('atolle_pending_claim')}catch{}}if(params.get('save')){try{await api('/api/account/wishlist',{method:'POST',body:JSON.stringify({yacht_id:Number(params.get('save'))})})}catch{}}const fallback=r.user.role==='admin'?'admin.html':r.user.role==='vendor'?'vendor.html':'account.html';let target=fallback;try{const requested=new URL(params.get('next')||fallback,location.origin);if(requested.origin===location.origin)target=requested.pathname+requested.search+requested.hash}catch{}location.href=target}
+    loginForm.addEventListener('submit',async e=>{e.preventDefault();msg.textContent='Signing in…';try{await afterAuth(await api('/api/auth/login',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))}))}catch(err){msg.textContent=err.message}});
+    registerForm.addEventListener('submit',async e=>{e.preventDefault();registerMsg.textContent='Creating account…';try{await afterAuth(await api('/api/auth/register',{method:'POST',body:JSON.stringify(Object.fromEntries(new FormData(e.target)))}))}catch(err){registerMsg.textContent=err.message}});
   </script>
 </body>
 </html>

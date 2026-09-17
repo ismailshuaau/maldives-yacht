@@ -46,6 +46,12 @@ async function passwordMatches(password: string, encoded: string): Promise<boole
     return constantEqual(actualEncoded, expected);
   } catch { return false; }
 }
+async function passwordHash(password: string): Promise<string> {
+  const iterations = 210_000, salt = crypto.getRandomValues(new Uint8Array(16));
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(password), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt, iterations }, material, 256);
+  return `${iterations}$${btoa(String.fromCharCode(...salt))}$${btoa(String.fromCharCode(...new Uint8Array(bits)))}`;
+}
 
 type DbRow = Record<string, unknown>;
 function row(raw: DbRow | null): DbRow | null {
@@ -166,7 +172,7 @@ async function requireRole(request: Request, env: Env, roles: string[]): Promise
 }
 async function canAccessBooking(request: Request, env: Env, booking: DbRow): Promise<boolean> {
   const actor = await userFor(request, env);
-  if (actor?.role === "admin" || (actor?.role === "vendor" && actor.vendor_id === booking.vendor_id)) return true;
+  if (actor?.role === "admin" || actor?.id === booking.user_id || (actor?.role === "vendor" && actor.vendor_id === booking.vendor_id)) return true;
   return hasToken(requestToken(request, "x-booking-token"), booking.access_token_hash);
 }
 async function requirePaymentAccess(request: Request, env: Env, paymentId: unknown): Promise<DbRow> {
@@ -571,14 +577,7 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
   const path = url.pathname;
   if (path === "/api/health") {
     const health = { ok: true, time: now(), environment: env.ENVIRONMENT, auth_enforced: env.ENFORCE_AUTH === "1" };
-    if (env.ENVIRONMENT !== "staging") return json(health);
-    return json({
-      ...health,
-      demo_accounts: [
-        { role: "admin", email: "admin@atolle.mv", password: "AtolleAdmin123!" },
-        { role: "vendor", email: "operator@example.com", password: "AtolleVendor123!" },
-      ],
-    });
+    return json(health);
   }
   if (path === "/api/booking-config") return json({
     conditions_version:await setting(env,"booking_conditions_version","2026-09-17"),
@@ -597,6 +596,40 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
     if (!actor) return json({ authenticated: false }, 401);
     delete actor.password_hash;
     return json(actor);
+  }
+  if (path === "/api/homepage") {
+    const result = await env.DB.batch([
+      env.DB.prepare("SELECT COUNT(*) n FROM yachts WHERE status='live' AND verified=1"),
+      env.DB.prepare("SELECT COUNT(*) n FROM departures d JOIN yachts y ON y.id=d.yacht_id WHERE d.status='open' AND d.mock_generated=0 AND date(d.end_date)>=date('now') AND y.status='live' AND y.verified=1"),
+      env.DB.prepare("SELECT COUNT(DISTINCT v.id) n FROM vendors v JOIN yachts y ON y.vendor_id=v.id WHERE v.verified=1 AND v.status='verified' AND y.status='live' AND y.verified=1"),
+      env.DB.prepare("SELECT COUNT(*) n FROM bookings WHERE status IN ('confirmed','completed')"),
+      env.DB.prepare("SELECT COUNT(*) n FROM reviews WHERE status='approved'")
+    ]);
+    const reviews = rows(await env.DB.prepare(`SELECT r.id,r.rating,r.title,r.body,r.created_at,y.id yacht_id,y.name yacht_name,
+      b.start_date travel_date,b.guest_name FROM reviews r JOIN bookings b ON b.id=r.booking_id JOIN yachts y ON y.id=r.yacht_id
+      WHERE r.status='approved' AND b.status='completed' ORDER BY r.moderated_at DESC,r.id DESC LIMIT 12`).all<DbRow>());
+    for (const review of reviews) { review.guest_initials = String(review.guest_name || "Guest").split(/\s+/).slice(0,2).map((part)=>part[0]?.toUpperCase() || "").join("") || "G"; delete review.guest_name; }
+    return json({hero:{eyebrow:await setting(env,"hero_eyebrow","Private yacht charters · liveaboards"),title:await setting(env,"hero_title","Discover the Maldives on a liveaboard"),text:await setting(env,"hero_text","Choose the whole yacht or join a scheduled liveaboard, then shape the experience around you.")},
+      assurances:[],
+      statistics:{live_yachts:(result[0].results[0] as DbRow).n,departures:(result[1].results[0] as DbRow).n,operators:(result[2].results[0] as DbRow).n,bookings:(result[3].results[0] as DbRow).n,verified_reviews:(result[4].results[0] as DbRow).n},
+      support_profiles:rows(await env.DB.prepare("SELECT * FROM support_profiles WHERE active=1 ORDER BY sort_order,id").all<DbRow>()),
+      support_always_available:(await setting(env,"support_always_available","0")) === "1",reviews,
+      trust_marks:rows(await env.DB.prepare("SELECT * FROM trust_marks WHERE active=1 AND verified=1 ORDER BY sort_order,id").all<DbRow>())});
+  }
+  if (path === "/api/account/dashboard") {
+    const actor = await requireRole(request,env,["guest","vendor","admin"]);
+    const bookings=rows(await env.DB.prepare(`SELECT b.*,y.name yacht_name,y.image yacht_image,
+      CASE WHEN b.status='completed' AND r.id IS NULL THEN 1 ELSE 0 END review_eligible,r.id review_id,r.status review_status
+      FROM bookings b JOIN yachts y ON y.id=b.yacht_id LEFT JOIN reviews r ON r.booking_id=b.id WHERE b.user_id=? ORDER BY b.created_at DESC`).bind(actor.id).all<DbRow>());
+    for(const booking of bookings){delete booking.access_token_hash;delete booking.idempotency_key;}
+    const saved=rows(await env.DB.prepare("SELECT y.* FROM wishlists w JOIN yachts y ON y.id=w.yacht_id WHERE w.user_id=? ORDER BY w.created_at DESC").bind(actor.id).all<DbRow>());saved.forEach(publicYacht);
+    return json({user:{id:actor.id,name:actor.name,email:actor.email,role:actor.role},bookings,saved_yachts:saved,support_requests:rows(await env.DB.prepare("SELECT * FROM support_requests WHERE user_id=? ORDER BY created_at DESC").bind(actor.id).all<DbRow>())});
+  }
+  if (path === "/api/account/wishlist") { const actor=await requireRole(request,env,["guest","vendor","admin"]),items=rows(await env.DB.prepare("SELECT y.* FROM wishlists w JOIN yachts y ON y.id=w.yacht_id WHERE w.user_id=? ORDER BY w.created_at DESC").bind(actor.id).all<DbRow>());items.forEach(publicYacht);return json(items); }
+  if (path === "/api/account/support") { const actor=await requireRole(request,env,["guest","vendor","admin"]); return json(rows(await env.DB.prepare("SELECT * FROM support_requests WHERE user_id=? ORDER BY created_at DESC").bind(actor.id).all<DbRow>())); }
+  if (["/api/admin/reviews","/api/admin/support","/api/admin/support-profiles","/api/admin/trust-marks"].includes(path)) {
+    await requireRole(request,env,["admin"]); const table=({"/api/admin/reviews":"reviews","/api/admin/support":"support_requests","/api/admin/support-profiles":"support_profiles","/api/admin/trust-marks":"trust_marks"} as Record<string,string>)[path];
+    return json(rows(await env.DB.prepare(`SELECT * FROM ${table} ORDER BY ${["support_profiles","trust_marks"].includes(table)?"sort_order,id":"id DESC"}`).all<DbRow>()));
   }
   if (path === "/api/yachts") {
     const clauses: string[] = [], values: unknown[] = [];
@@ -798,6 +831,17 @@ async function markPayment(env: Env, paymentId: unknown, status: string, actor: 
 
 async function postApi(request: Request, env: Env, url: URL): Promise<Response> {
   const data = await body(request), path = url.pathname, timestamp = now();
+  if (path === "/api/auth/register") {
+    const name=textField(data,"name",120,true),email=emailField(data),password=textField(data,"password",256,true);
+    if(password.length<10)throw new HttpError("Password must be at least 10 characters");
+    if(await env.DB.prepare("SELECT 1 FROM users WHERE lower(email)=lower(?)").bind(email).first())throw new HttpError("Email already registered",409);
+    const insert=await env.DB.prepare("INSERT INTO users(name,email,password_hash,role,active,created_at) VALUES(?,?,?,'guest',1,?)").bind(name,email,await passwordHash(password),timestamp).run();
+    const session=await newSession(env);await env.DB.batch([
+      env.DB.prepare("INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)").bind(session.tokenHash,insert.meta.last_row_id,session.expires_at,timestamp),
+      env.DB.prepare("INSERT INTO audit_logs(actor_user_id,actor_role,action,entity_type,entity_id,detail_json,created_at) VALUES(?,'guest','register','user',?,'{}',?)").bind(insert.meta.last_row_id,String(insert.meta.last_row_id),timestamp)
+    ]);
+    return Response.json({expires_at:session.expires_at,user:{id:insert.meta.last_row_id,name,email,role:"guest"}},{status:201,headers:{...JSON_HEADERS,"set-cookie":`atolle_session=${session.token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${Math.max(1,Math.floor((Date.parse(session.expires_at)-Date.now())/1000))}`}});
+  }
   if (path === "/api/auth/login") {
     const email = emailField(data), password = textField(data, "password", 256, true);
     const rateLimitKey = await enforceLoginRateLimit(request, env, email);
@@ -823,6 +867,36 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     if (token) await env.DB.prepare("DELETE FROM sessions WHERE token_hash=?").bind(await sha256(token)).run();
     return Response.json({ ok: true }, { headers: { ...JSON_HEADERS, "set-cookie": "atolle_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0" } });
   }
+  if (path === "/api/account/wishlist") {
+    const actor=await requireRole(request,env,["guest","vendor","admin"]),yachtId=numberField(data,"yacht_id",{integer:true,minimum:1,required:true});
+    if(!await env.DB.prepare("SELECT 1 FROM yachts WHERE id=? AND status='live' AND verified=1").bind(yachtId).first())throw new HttpError("Yacht not found",404);
+    await env.DB.prepare("INSERT OR IGNORE INTO wishlists(user_id,yacht_id,created_at) VALUES(?,?,?)").bind(actor.id,yachtId,timestamp).run();await audit(env,actor,"save","yacht",yachtId);return json({ok:true,yacht_id:yachtId},201);
+  }
+  if (path === "/api/account/bookings/claim") {
+    const actor=await requireRole(request,env,["guest","vendor","admin"]),ref=textField(data,"booking_ref",80,true).toUpperCase(),token=textField(data,"booking_token",256,true);
+    const booking=row(await env.DB.prepare("SELECT * FROM bookings WHERE booking_ref=?").bind(ref).first<DbRow>());
+    if(!booking||!await hasToken(token,booking.access_token_hash))throw new HttpError("Booking reference or access token is invalid",403);
+    if(booking.user_id&&booking.user_id!==actor.id)throw new HttpError("Booking is already attached to another account",409);
+    await env.DB.prepare("UPDATE bookings SET user_id=?,updated_at=? WHERE id=?").bind(actor.id,timestamp,booking.id).run();await audit(env,actor,"claim","booking",booking.id);return json({ok:true,booking_id:booking.id});
+  }
+  if (path === "/api/account/reviews") {
+    const actor=await requireRole(request,env,["guest","vendor","admin"]),bookingId=numberField(data,"booking_id",{integer:true,minimum:1,required:true}),rating=numberField(data,"rating",{integer:true,minimum:1,maximum:5,required:true}),title=textField(data,"title",120),reviewBody=textField(data,"body",4000,true);
+    if(reviewBody.length<20)throw new HttpError("Review must be at least 20 characters");
+    const booking=row(await env.DB.prepare("SELECT * FROM bookings WHERE id=? AND user_id=? AND status='completed'").bind(bookingId,actor.id).first<DbRow>());if(!booking)throw new HttpError("Only your completed bookings can be reviewed",403);
+    if(await env.DB.prepare("SELECT 1 FROM reviews WHERE booking_id=?").bind(bookingId).first())throw new HttpError("This booking has already been reviewed",409);
+    const insert=await env.DB.prepare("INSERT INTO reviews(booking_id,user_id,yacht_id,rating,title,body,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'pending',?,?)").bind(bookingId,actor.id,booking.yacht_id,rating,title||null,reviewBody,timestamp,timestamp).run();await audit(env,actor,"submit","review",insert.meta.last_row_id);return json({id:insert.meta.last_row_id,status:"pending"},201);
+  }
+  if (path === "/api/support") {
+    const actor=await userFor(request,env),merged={...data,name:data.name||actor?.name,email:data.email||actor?.email},name=textField(merged,"name",120,true),email=emailField(merged),subject=textField(data,"subject",160,true),message=textField(data,"message",5000,true),phone=textField(data,"phone",40)||null;
+    if(subject.length<3||message.length<10)throw new HttpError("Subject and message are too short");
+    const insert=await env.DB.prepare("INSERT INTO support_requests(user_id,name,email,phone,subject,message,status,created_at,updated_at) VALUES(?,?,?,?,?,?,'new',?,?)").bind(actor?.id||null,name,email,phone,subject,message,timestamp,timestamp).run();await audit(env,actor,"create","support_request",insert.meta.last_row_id);return json({id:insert.meta.last_row_id,status:"new"},201);
+  }
+  if (["/api/admin/support-profiles","/api/admin/trust-marks"].includes(path)) {
+    const actor=await requireRole(request,env,["admin"]),name=textField(data,"name",120,true);let insert;
+    if(path.endsWith("support-profiles"))insert=await env.DB.prepare("INSERT INTO support_profiles(name,title,bio,image_url,email,phone,active,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?)").bind(name,textField(data,"title",120,true),textField(data,"bio",1000)||null,urlField(data,"image_url"),textField(data,"email",254)||null,textField(data,"phone",40)||null,Number(data.active===undefined?true:bool(data.active)),numberField(data,"sort_order",{integer:true,minimum:0,maximum:10000})||0,timestamp,timestamp).run();
+    else insert=await env.DB.prepare("INSERT INTO trust_marks(name,attribution,image_url,link_url,verified,active,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)").bind(name,textField(data,"attribution",500,true),urlField(data,"image_url"),urlField(data,"link_url"),Number(bool(data.verified)),Number(data.active===undefined?true:bool(data.active)),numberField(data,"sort_order",{integer:true,minimum:0,maximum:10000})||0,timestamp,timestamp).run();
+    await audit(env,actor,"create",path.split("/").at(-1)||"managed_homepage",insert.meta.last_row_id);return json({id:insert.meta.last_row_id},201);
+  }
   if (path === "/api/bookings/quote") return json(quoteResponse(await bookingSelection(env, data)));
   if (path === "/api/bookings") {
     const idempotencyToken = requestToken(request, "idempotency-key");
@@ -842,8 +916,8 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const actor = await userFor(request, env);
     try {
       const statements = [
-        env.DB.prepare(`INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at,access_token_hash,idempotency_key)
-          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?, ?,?,?)`).bind(ref, yacht.id, departureId, mode, guestName, email, phone, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, total, currency, notes, expires, timestamp, timestamp, idempotencyKey, idempotencyKey),
+        env.DB.prepare(`INSERT INTO bookings(booking_ref,yacht_id,departure_id,mode,guest_name,email,phone,guests,cabins_booked,start_date,end_date,nights,total_amount,deposit_percent,deposit_amount,amount_paid,balance_due,currency,status,payment_status,notes,expires_at,created_at,updated_at,access_token_hash,idempotency_key,user_id)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,0,?,?, 'pending_operator','unpaid',?,?,?, ?,?,?,?)`).bind(ref, yacht.id, departureId, mode, guestName, email, phone, guests, cabinsBooked, start, end, nights, total, depositPercent, deposit, total, currency, notes, expires, timestamp, timestamp, idempotencyKey, idempotencyKey,actor?.id||null),
         env.DB.prepare("INSERT INTO availability_holds(booking_id,yacht_id,departure_id,start_date,end_date,units,cabin_units,expires_at,status,created_at) SELECT id,?,?,?,?,?,?,?,'active',? FROM bookings WHERE booking_ref=?").bind(yacht.id, departureId, start, end, mode === "shared" ? guests : 1, cabinsBooked, expires, timestamp, ref),
         env.DB.prepare("INSERT INTO notifications(vendor_id,booking_id,channel,subject,body,status,created_at,sent_at) SELECT ?,id,'in_app','New booking request',?,'sent',?,? FROM bookings WHERE booking_ref=?").bind(yacht.vendor_id, `New ${mode} booking request ${ref} for ${yacht.name}.`, timestamp, timestamp, ref),
         env.DB.prepare("UPDATE bookings SET conditions_version=?,conditions_snapshot_json=?,conditions_accepted_at=? WHERE booking_ref=?").bind(conditionsVersion,JSON.stringify({version:conditionsVersion,platform:await setting(env,"booking_conditions_intro",""),departure:selection.departure?.booking_conditions||{}}),timestamp,ref),
@@ -934,15 +1008,15 @@ async function postApi(request: Request, env: Env, url: URL): Promise<Response> 
     const cabins = numberField(data, "cabins", { integer: true, minimum: 1, maximum: 100, required: true });
     const crew = numberField(data, "crew", { integer: true, minimum: 0, maximum: 100 }) ?? 0;
     const length = numberField(data, "length_m", { minimum: 0, maximum: 300 }) ?? 0;
-    const private = privateSettings(data);
-    const privateRate = private.rate;
+    const privateOptions = privateSettings(data);
+    const privateRate = privateOptions.rate;
     const sharedRate = numberField(data, "shared_rate", { minimum: 0, maximum: 1_000_000 });
     const description = textField(data, "description", 10_000) || null, image = urlField(data, "image");
     const amenities = stringList(data, "amenities"), experiences = stringList(data, "experiences");
     const gallery = stringList(data, "gallery", 100); for (const value of gallery) { try { if (new URL(value).protocol !== "https:") throw new Error(); } catch { throw new HttpError("gallery must contain HTTPS URLs"); } }
     const slug = name.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
     const insert = await env.DB.prepare(`INSERT INTO yachts(vendor_id,name,slug,type,status,private_enabled,shared_enabled,guests,cabins,crew,length_m,year_built,year_refit,description,image,private_rate,private_rate_public,private_instant_booking,private_min_nights,private_max_nights,shared_rate,amenities_json,experiences_json,gallery_json,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, name, slug, type, status, Number(privateEnabled), Number(sharedEnabled), guests, cabins, crew, length, numberField(data, "year_built", { integer: true, minimum: 1800, maximum: 2200 }), numberField(data, "year_refit", { integer: true, minimum: 1800, maximum: 2200 }), description, image, privateRate, Number(private.ratePublic), Number(private.instantBooking), private.minNights, private.maxNights, sharedRate, JSON.stringify(amenities), JSON.stringify(experiences), JSON.stringify(gallery), timestamp).run();
+      VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(vendorId, name, slug, type, status, Number(privateEnabled), Number(sharedEnabled), guests, cabins, crew, length, numberField(data, "year_built", { integer: true, minimum: 1800, maximum: 2200 }), numberField(data, "year_refit", { integer: true, minimum: 1800, maximum: 2200 }), description, image, privateRate, Number(privateOptions.ratePublic), Number(privateOptions.instantBooking), privateOptions.minNights, privateOptions.maxNights, sharedRate, JSON.stringify(amenities), JSON.stringify(experiences), JSON.stringify(gallery), timestamp).run();
     await audit(env, actor, "create", "yacht", insert.meta.last_row_id, { name }); return json({ id: insert.meta.last_row_id }, 201);
   }
   const newDeparture = path.match(/^\/api\/yachts\/(\d+)\/departures$/);
@@ -1061,8 +1135,14 @@ function itineraryField(value: unknown): DbRow[] {
 
 async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
   const data = await body(request), path = url.pathname, timestamp = now();
+  const reviewModeration=path.match(/^\/api\/admin\/reviews\/(\d+)$/);
+  if(reviewModeration){const actor=await requireRole(request,env,["admin"]),status=enumField(data,"status",["approved","rejected","hidden"]);const result=await env.DB.prepare("UPDATE reviews SET status=?,admin_note=?,moderated_at=?,moderated_by=?,updated_at=? WHERE id=?").bind(status,textField(data,"admin_note",1000)||null,timestamp,actor.id,timestamp,reviewModeration[1]).run();if(!result.meta.changes)throw new HttpError("Review not found",404);await audit(env,actor,"moderate","review",reviewModeration[1],{status});return json({ok:true,status});}
+  const supportUpdate=path.match(/^\/api\/admin\/support\/(\d+)$/);
+  if(supportUpdate){const actor=await requireRole(request,env,["admin"]),status=enumField(data,"status",["new","open","waiting","resolved","closed"]);const result=await env.DB.prepare("UPDATE support_requests SET status=?,admin_notes=?,updated_at=? WHERE id=?").bind(status,textField(data,"admin_notes",4000)||null,timestamp,supportUpdate[1]).run();if(!result.meta.changes)throw new HttpError("Support request not found",404);await audit(env,actor,"update","support_request",supportUpdate[1],{status});return json({ok:true,status});}
+  const managedUpdate=path.match(/^\/api\/admin\/(support-profiles|trust-marks)\/(\d+)$/);
+  if(managedUpdate){const actor=await requireRole(request,env,["admin"]),table=managedUpdate[1]==="support-profiles"?"support_profiles":"trust_marks",sets:string[]=[],values:unknown[]=[];for(const field of table==="support_profiles"?["active","sort_order"]:["active","verified","sort_order"]){if(field in data){sets.push(`${field}=?`);values.push(field==="sort_order"?numberField(data,field,{integer:true,minimum:0,maximum:10000,required:true}):Number(bool(data[field])))}}if(!sets.length)throw new HttpError("No supported fields supplied");sets.push("updated_at=?");values.push(timestamp,managedUpdate[2]);const result=await env.DB.prepare(`UPDATE ${table} SET ${sets.join(",")} WHERE id=?`).bind(...values).run();if(!result.meta.changes)throw new HttpError("Not found",404);await audit(env,actor,"update",table,managedUpdate[2],data);return json({ok:true});}
   if (path === "/api/admin/settings") {
-    const actor = await requireRole(request, env, ["admin"]), ranges: Record<string, [number, number] | null> = { commission_rate: [0, 100], deposit_percent: [0, 100], hold_minutes: [5, 1440], currency: null,booking_conditions_version:null,booking_conditions_intro:null,best_price_guarantee_enabled:null,best_price_guarantee_text:null }, changed: DbRow = {};
+    const actor = await requireRole(request, env, ["admin"]), ranges: Record<string, [number, number] | null> = { commission_rate: [0, 100], deposit_percent: [0, 100], hold_minutes: [5, 1440], currency: null,booking_conditions_version:null,booking_conditions_intro:null,best_price_guarantee_enabled:null,best_price_guarantee_text:null,hero_eyebrow:null,hero_title:null,hero_text:null,support_always_available:null }, changed: DbRow = {};
     const statements: D1PreparedStatement[] = [];
     for (const [key, value] of Object.entries(data)) {
       if (!(key in ranges)) throw new HttpError(`Unknown setting: ${key}`); const range = ranges[key];
@@ -1115,12 +1195,12 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
     for (const field of ["guests", "cabins", "crew"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: field === "guests" || field === "cabins" ? 1 : 0, maximum: 200, required: true });
     for (const field of ["year_built", "year_refit"]) if (field in data) data[field] = numberField(data, field, { integer: true, minimum: 1800, maximum: 2200 });
     if ("length_m" in data) data.length_m = numberField(data, "length_m", { minimum: 0, maximum: 300, required: true });
-    const private = privateSettings(data, yacht);
+    const privateOptions = privateSettings(data, yacht);
     for (const field of ["private_rate", "shared_rate"]) if (field in data) data[field] = numberField(data, field, { minimum: 0, maximum: 10_000_000 });
-    if ("private_rate_public" in data) data.private_rate_public = Number(private.ratePublic);
-    if ("private_instant_booking" in data) data.private_instant_booking = Number(private.instantBooking);
-    if ("private_min_nights" in data) data.private_min_nights = private.minNights;
-    if ("private_max_nights" in data) data.private_max_nights = private.maxNights;
+    if ("private_rate_public" in data) data.private_rate_public = Number(privateOptions.ratePublic);
+    if ("private_instant_booking" in data) data.private_instant_booking = Number(privateOptions.instantBooking);
+    if ("private_min_nights" in data) data.private_min_nights = privateOptions.minNights;
+    if ("private_max_nights" in data) data.private_max_nights = privateOptions.maxNights;
     if ("description" in data) data.description = textField(data, "description", 10_000);
     if ("image" in data) data.image = urlField(data, "image");
     for (const field of ["amenities", "experiences"]) if (field in data) data[field] = stringList(data, field);
@@ -1174,13 +1254,19 @@ async function putApi(request: Request, env: Env, url: URL): Promise<Response> {
   throw new HttpError("Unknown endpoint", 404);
 }
 
+async function deleteApi(request:Request,env:Env,url:URL):Promise<Response>{
+  const match=url.pathname.match(/^\/api\/account\/wishlist\/(\d+)$/);if(!match)throw new HttpError("Unknown endpoint",404);
+  const actor=await requireRole(request,env,["guest","vendor","admin"]);await env.DB.prepare("DELETE FROM wishlists WHERE user_id=? AND yacht_id=?").bind(actor.id,match[1]).run();await audit(env,actor,"unsave","yacht",match[1]);return json({ok:true});
+}
+
 async function api(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
   const url = new URL(request.url);
   try {
     if (request.method === "GET") return await getApi(request, env, ctx, url);
     if (request.method === "POST") return await postApi(request, env, url);
     if (request.method === "PUT") return await putApi(request, env, url);
-    return Response.json({ error: "Method not allowed" }, { status: 405, headers: { ...JSON_HEADERS, allow: "GET, POST, PUT" } });
+    if (request.method === "DELETE") return await deleteApi(request, env, url);
+    return Response.json({ error: "Method not allowed" }, { status: 405, headers: { ...JSON_HEADERS, allow: "GET, POST, PUT, DELETE" } });
   } catch (error) {
     if (error instanceof HttpError) return json({ error: error.message }, error.status);
     console.error(JSON.stringify({ level: "error", path: url.pathname, error: error instanceof Error ? error.stack : String(error) }));

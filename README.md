@@ -253,3 +253,14 @@ The application logic is substantially implemented, but a public real-money laun
 
 Until those external items are connected and verified, use BML mock/sandbox mode rather than accepting live customer funds.
 # maldives-yacht
+# Guest marketplace and homepage APIs
+
+The homepage reads verified public content from `GET /api/homepage`. Guest accounts use
+`/api/account/dashboard`, `/api/account/wishlist`, `/api/account/bookings/claim`, and
+`/api/account/reviews`. Anonymous booking claims require both the booking reference and
+the original booking access token; email is never accepted as proof of ownership.
+
+Support requests are submitted through `POST /api/support`. Administrators moderate
+reviews and support requests and manage consultant profiles and verified trust marks in
+`admin-content.html`. Apply Cloudflare migration `0009_guest_marketplace_homepage.sql`
+before deploying the matching Worker.

@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS availability_hold_cabin_items(
 CREATE TRIGGER IF NOT EXISTS prevent_cabin_category_overbooking
 BEFORE INSERT ON availability_hold_cabin_items
 BEGIN
- SELECT CASE WHEN NEW.cabins + COALESCE((
+ SELECT (CASE WHEN NEW.cabins + COALESCE((
    SELECT SUM(i.cabins) FROM availability_hold_cabin_items i
    JOIN availability_holds h ON h.id=i.hold_id
    WHERE i.departure_id=NEW.departure_id AND i.cabin_type_id=NEW.cabin_type_id
@@ -72,7 +72,7 @@ BEGIN
  ),0) > COALESCE((
    SELECT cabins_available FROM departure_cabin_inventory
    WHERE departure_id=NEW.departure_id AND cabin_type_id=NEW.cabin_type_id
- ),0) THEN RAISE(ABORT,'cabin category inventory unavailable') END;
+ ),0) THEN RAISE(ABORT,'cabin category inventory unavailable') END);
 END;
 
 CREATE INDEX IF NOT EXISTS idx_cabin_types_yacht ON yacht_cabin_types(yacht_id,active,sort_order);

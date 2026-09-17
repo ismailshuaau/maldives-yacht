@@ -78,15 +78,33 @@ with tempfile.TemporaryDirectory() as td:
         assert shared_booking['total_amount']==round(dep['price_pp']*2,2)
 
         y=yachts[0]
+        call('/api/yachts/'+str(y['id']),'PUT',{'private_rate_public':1,'private_instant_booking':1},token)
         private_start=today+timedelta(days=120)
         private_end=private_start+timedelta(days=3)
         b=call('/api/bookings','POST',{'yacht_id':y['id'],'mode':'private','guest_name':'Smoke Test','email':'smoke@example.com','guests':2,'start_date':str(private_start),'end_date':str(private_end),'conditions_accepted':True,'conditions_version':config['conditions_version']})
+        guest=call('/api/auth/register','POST',{'name':'Smoke Guest','email':'smoke-guest@example.com','password':'SmokeGuest123!'})
+        guest_token=guest['token']
+        invalid_claim_rejected=False
+        try:call('/api/account/bookings/claim','POST',{'booking_ref':b['booking_ref'],'booking_token':'wrong'},guest_token)
+        except Exception:invalid_claim_rejected=True
+        assert invalid_claim_rejected
+        call('/api/account/bookings/claim','POST',{'booking_ref':b['booking_ref'],'booking_token':b['booking_token']},guest_token)
+        call('/api/account/wishlist','POST',{'yacht_id':y['id']},guest_token)
+        assert len(call('/api/account/wishlist',token=guest_token))==1
+        call('/api/support','POST',{'subject':'Transfer help','message':'Please help arrange our transfer to the yacht.'},guest_token)
         pay=call('/api/payments/create','POST',{'booking_id':b['id'],'payment_type':'deposit'},token)
         assert round(pay['commission_rate'],2)==30
         assert round(pay['commission_amount'],2)==round(pay['gross_amount']*.30,2)
         call('/api/payments/demo-complete','POST',{'payment_id':pay['payment_id'],'status':'paid'},token)
         detail=call('/api/bookings/'+str(b['id']))
         assert detail['payment_status'] in ('partial','paid')
+        call('/api/bookings/'+str(b['id']),'PUT',{'status':'completed'},token)
+        review=call('/api/account/reviews','POST',{'booking_id':b['id'],'rating':5,'title':'Excellent trip','body':'A carefully planned and genuinely memorable Maldives yacht journey.'},guest_token)
+        assert not call('/api/homepage')['reviews']
+        call('/api/admin/reviews/'+str(review['id']),'PUT',{'status':'approved'},token)
+        homepage=call('/api/homepage')
+        assert homepage['reviews'][0]['guest_initials']=='ST' and homepage['statistics']['verified_reviews']>=1
+        assert call('/api/account/dashboard',token=guest_token)['support_requests'][0]['status']=='new'
         ledger=call('/api/admin/ledger',token=token)
         assert ledger and ledger[0]['available_balance']>0
         subprocess.run(['python3','-c','import app; app.init_db()'],cwd=ROOT,env=env,check=True)
