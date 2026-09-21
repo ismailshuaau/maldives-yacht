@@ -22,7 +22,7 @@
 
 .homePage .hero {
   min-height:700px; padding:144px 0 56px;
-  background-image:linear-gradient(180deg,rgba(2,18,22,.62) 0%,rgba(2,18,22,.3) 42%,rgba(2,18,22,.62) 100%),url('images/azalea-hero.jpg');
+  background-image:url('images/azalea-hero.jpg');
   background-position:center; background-size:cover;
 }
 .homePage .hero .heroCopy { max-width:860px }
@@ -145,10 +145,7 @@
   .homePage .section,.homePage #experiences.section { padding:56px 0 }
   .homePage .section h2 { font-size:29px }
   .homePage .sub { font-size:15px }
-  .homePage .hero {
-    padding-top:110px;
-    background-image:linear-gradient(180deg,rgba(2,18,22,.58) 0%,rgba(2,18,22,.34) 30%,rgba(2,18,22,.72) 100%),url('images/azalea-hero.jpg');
-  }
+  .homePage .hero { padding-top:110px }
   .homePage .hero h1 { font-size:clamp(32px,8.5vw,44px) }
   .homePage .heroSearchShell { margin-top:26px }
   .homePage .heroSearchShell .bookingModelPanel { padding:14px }
