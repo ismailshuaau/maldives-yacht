@@ -53,6 +53,7 @@
       "vars": {
         "ENVIRONMENT": "staging",
         "ENFORCE_AUTH": "1",
+        "STAGING_DEMO_LOGIN": "1",
         "SESSION_HOURS": "24",
         "BML_MODE": "mock",
         "BML_ENV": "sandbox",

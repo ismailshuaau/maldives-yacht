@@ -579,6 +579,21 @@ async function getApi(request: Request, env: Env, ctx: ExecutionContext, url: UR
     const health = { ok: true, time: now(), environment: env.ENVIRONMENT, auth_enforced: env.ENFORCE_AUTH === "1" };
     return json(health);
   }
+  if (path === "/api/auth/demo-account") {
+    if (env.ENVIRONMENT !== "staging" || env.STAGING_DEMO_LOGIN !== "1") return json({ enabled: false });
+    const role = url.searchParams.get("role");
+    if (role !== "vendor" && role !== "admin") return json({ enabled: false });
+    const email = role === "admin" ? "admin@atolle.mv" : "operator@example.com";
+    const password = role === "admin" ? "AtolleAdmin123!" : "AtolleVendor123!";
+    const account = role === "admin"
+      ? await env.DB.prepare("SELECT id FROM users WHERE email=? AND role='admin' AND active=1 LIMIT 1")
+        .bind(email).first<{ id: number }>()
+      : await env.DB.prepare(`SELECT u.id FROM users u JOIN vendors v ON v.id=u.vendor_id
+        WHERE u.email=? AND u.role='vendor' AND u.active=1 AND v.status='verified' AND v.verified=1 LIMIT 1`)
+        .bind(email).first<{ id: number }>();
+    if (!account) return json({ enabled: false });
+    return json({ enabled: true, role, email, password });
+  }
   if (path === "/api/booking-config") return json({
     conditions_version:await setting(env,"booking_conditions_version","2026-09-17"),
     conditions_intro:await setting(env,"booking_conditions_intro",""),
