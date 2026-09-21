@@ -1,0 +1,173 @@
+/* Homepage marketplace theme. Shared customer and portal layouts stay in app.css. */
+.homePage {
+  --font-display:var(--font-body);
+  --focus:#7da897;
+  background:var(--cream);
+}
+.homePage h1,.homePage h2,.homePage h3 { font-family:var(--font-body) }
+.homePage .section { padding:80px 0 }
+.homePage .section h2 { margin:10px 0 16px; font-size:clamp(28px,3.2vw,40px); line-height:1.2; letter-spacing:-.035em }
+.homePage .eyebrow { font-size:11px; font-weight:800; letter-spacing:.13em }
+.homePage .sub { max-width:660px; margin:0; font-size:16px; line-height:1.75 }
+.homePage .sectionHead { margin-bottom:32px }
+.homePage .btn { text-transform:none; letter-spacing:0; font-size:14px }
+.homePage .btn.ghost { border-color:var(--line-strong); background:#fff; color:var(--ink) }
+.homePage .btn.ghost:hover { background:var(--aqua); border-color:var(--sea) }
+.homePage .btn.small { font-size:13px }
+.homePage .topnav .countBadge { background:var(--aqua); color:var(--ink) }
+.homePage .topnav .links a:not(.btn):hover,
+.homePage .topnav .links button:hover,
+.homePage .topnav .links a:not(.btn):focus-visible,
+.homePage .topnav .links button:focus-visible { border-color:#c9e4d7 }
+
+.homePage .hero {
+  min-height:700px; padding:144px 0 56px;
+  background-image:linear-gradient(180deg,rgba(2,18,22,.62) 0%,rgba(2,18,22,.3) 42%,rgba(2,18,22,.62) 100%),url('images/azalea-hero.jpg');
+  background-position:center; background-size:cover;
+}
+.homePage .hero .heroCopy { max-width:860px }
+.homePage .hero h1 { max-width:850px; margin:0 auto 20px; font-size:clamp(38px,4.8vw,60px); line-height:1.1; font-weight:800; letter-spacing:-.045em }
+.homePage .heroCopy p { max-width:670px; font-size:17px; line-height:1.7 }
+.homePage .heroSearchShell { width:min(820px,100%); margin-top:32px; scroll-margin-top:100px }
+.homePage .heroSearchShell .bookingModelPanel { display:block; padding:24px; border:1px solid #fff; border-radius:20px; background:#fff; box-shadow:0 20px 60px rgba(3,30,25,.22) }
+.homePage .heroSearchShell .compactHeroSearch { width:100%; grid-template-columns:minmax(0,1fr) 160px; align-items:center; gap:0 16px; border-radius:0; background:transparent; box-shadow:none }
+.homePage .heroSearchShell .compactHeroSearch .tripTypeField { grid-column:1/-1; min-height:0; width:100%; padding:0; border:0; background:transparent }
+.homePage .heroSearchShell .compactModeSwitch { display:grid; grid-template-columns:1fr 1fr; gap:6px; width:100%; padding:5px; overflow:visible; border:1px solid var(--line); border-radius:12px; background:var(--cream); box-shadow:none }
+.homePage .heroSearchShell .compactModeSwitch .bookingModelTab { justify-content:center; min-height:48px; padding:10px 14px; border:1px solid transparent; border-radius:8px; background:transparent; color:var(--muted); font-size:14px; font-weight:800 }
+.homePage .heroSearchShell .compactModeSwitch .bookingModelTab:hover { background:#eef3ed; color:var(--ink) }
+.homePage .heroSearchShell .compactModeSwitch .bookingModelTab.active { border:1px solid #bed4c8; background:var(--aqua); color:var(--ink); box-shadow:0 1px 3px rgba(3,44,38,.06) }
+.homePage .heroSearchShell .modeDescription { grid-column:1/-1; margin:12px 0 22px; color:var(--muted); font-size:14px; line-height:1.6; text-align:left; text-shadow:none }
+.homePage .heroSearchShell .compactHeroSearch .travelPeriodField { min-height:76px; padding:12px 16px; border:1px solid var(--line-strong); border-radius:10px; background:#fff }
+.homePage .heroSearchShell .fieldLabel { margin-bottom:4px; font-size:11px; letter-spacing:.05em; color:var(--muted) }
+.homePage .heroSearchShell .monthTrigger { min-height:32px; font-size:15px; line-height:1.5 }
+.homePage .heroSearchShell .compactHeroSearch .compactSearchButton { min-height:76px; margin:0; border-radius:10px; font-size:15px; text-transform:none; letter-spacing:0 }
+.homePage .heroSearchShell .searchMessage { margin:12px 0 0; min-height:0; color:var(--danger); font-size:13px; font-weight:650; text-align:left; text-shadow:none }
+.homePage .heroSearchShell .searchMessage:empty { margin:0 }
+.homePage .heroSearchShell .monthPicker { border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow-lg) }
+.homePage .monthPickerHead strong { font-size:18px; line-height:1.4 }
+.homePage .monthPickerHead button { min-width:44px; min-height:44px; border-radius:8px }
+.homePage .monthGrid button { min-height:44px; border-radius:6px; font-size:13px }
+.homePage .monthGrid button[aria-pressed="true"] { border-color:var(--sea); background:var(--aqua); color:var(--ink) }
+.homePage .privateDatePanel input { border-radius:6px }
+.homePage .hero .homeAssurance { width:min(900px,100%); margin:24px auto 0; padding:0; gap:0; border:0; border-radius:0; background:none; color:#fff; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none }
+.homePage .assuranceItem { min-height:44px; padding:8px 16px; border:0; border-left:1px solid rgba(255,255,255,.28); background:transparent; color:inherit; text-align:left }
+.homePage .assuranceItem:first-child { border-left:0 }
+.homePage .assuranceItem:is(a,button) { cursor:pointer }
+.homePage .assuranceItem:is(a,button):hover { text-decoration:underline; text-underline-offset:4px }
+.homePage .assuranceItem svg { width:23px; height:23px }
+.homePage .assuranceItem strong { font-size:12px; font-weight:650; line-height:1.5 }
+
+.homePage .entryGrid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px; margin-top:32px; border:0; background:transparent }
+.homePage .entryGrid > a { display:flex; align-items:flex-start; flex-direction:column; min-height:280px; padding:32px; border:1px solid var(--line); border-radius:16px; background:#fff; box-shadow:var(--shadow-sm); transition:border-color 160ms ease,box-shadow 160ms ease }
+.homePage .entryGrid > a:hover { border-color:#7f9d91; box-shadow:var(--shadow-md) }
+.homePage .entryGrid .entryIcon { display:grid; place-items:center; width:52px; height:52px; border-radius:12px; background:var(--aqua); color:var(--sea) }
+.homePage .entryIcon svg { width:28px; height:28px; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round }
+.homePage .entryGrid h3 { margin:22px 0 10px; font-size:24px; letter-spacing:-.025em }
+.homePage .entryGrid p { max-width:420px; min-height:0; margin:0 0 24px; font-size:15px; line-height:1.75 }
+.homePage .entryGrid strong { display:flex; align-items:center; gap:16px; margin-top:auto; font-size:14px }
+.homePage #experiences.section { padding:80px 0; scroll-margin-top:76px; background:var(--aqua) !important }
+.homePage #experiences .grid4 { gap:20px; margin-top:32px }
+.homePage .experienceCard { height:350px; border:0; border-radius:14px; box-shadow:var(--shadow-sm) }
+.homePage .experienceCard .copy { padding:64px 22px 24px; background:linear-gradient(transparent,rgba(3,32,27,.94)) }
+.homePage .experienceCard h3 { color:#fff; font-size:21px; line-height:1.25; letter-spacing:-.02em }
+.homePage .experienceCard p { margin-top:8px; color:#f0f7f3; font-size:14px; line-height:1.6 }
+.homePage .experienceCard:hover { box-shadow:0 0 0 3px var(--sea),var(--shadow-md) }
+.homePage .supportSection { background:var(--cream) }
+.homePage .supportProfiles { gap:24px }
+.homePage .supportProfile { grid-template-columns:100px minmax(0,1fr); border-color:var(--line); border-radius:14px }
+.homePage .supportProfile > div { padding:24px 20px }
+.homePage .supportProfile:not(:has(> img)) { grid-template-columns:1fr }
+.homePage .supportProfile span { font-size:11px; line-height:1.5; letter-spacing:.04em }
+.homePage .supportProfile h3 { margin:8px 0 12px; font-size:22px; line-height:1.3 }
+.homePage .supportProfile p { font-size:14px; line-height:1.75 }
+.homePage .confidenceSection { background:var(--ink) }
+.homePage .confidenceStats { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; overflow:hidden; border-color:#31594e; border-radius:14px; background:#31594e }
+.homePage .confidenceStats > div { padding:28px 24px; border:0; background:var(--ink) }
+.homePage .confidenceStats strong { font-size:36px; letter-spacing:-.04em }
+.homePage .confidenceStats span { margin-top:12px; color:#c7d8d2; font-size:13px }
+.homePage .reviewTrack { grid-auto-columns:minmax(300px,calc(50% - 12px)); gap:24px; padding:4px 4px 16px; scroll-padding:4px }
+.homePage .reviewCard { padding:32px; border:1px solid var(--line); border-radius:14px }
+.homePage .reviewCard .rating { color:var(--sea); font-size:16px; letter-spacing:3px }
+.homePage .reviewCard blockquote { margin:24px 0; font-size:20px; font-weight:600; line-height:1.65; letter-spacing:-.015em }
+.homePage .reviewCard footer { padding:0; margin:0; border:0; background:transparent; color:var(--muted) }
+.homePage .reviewCard footer strong { flex:none; background:var(--aqua); color:var(--sea) }
+.homePage .reviewCard footer span { font-size:12px; line-height:1.6 }
+.homePage .carouselControls button { border-radius:50%; color:var(--sea); font-size:18px }
+.homePage .carouselControls button:hover { background:var(--aqua) }
+.homePage .trustSection { padding-top:32px; border-top:1px solid var(--line) }
+.homePage .trustMarks { gap:16px; margin-top:24px }
+.homePage .trustMarks a { flex:1; min-width:min(240px,100%); padding:24px; border-radius:12px; font-size:14px }
+.homePage .trustMarks span { font-size:12px; line-height:1.6 }
+.homePage > footer { margin:0; padding:64px 0 28px; background:var(--ink) }
+.homePage .footergrid.expanded { grid-template-columns:minmax(220px,1.5fr) repeat(4,minmax(0,1fr)); gap:32px }
+.homePage .footerLogo { display:block; max-width:260px; margin:-12px 0 12px }
+.homePage .footerLogo img { width:100%; height:auto }
+.homePage .footergrid p { max-width:260px; font-size:14px; line-height:1.8 }
+.homePage .footergrid h4 { margin:0 0 18px; font-size:14px; font-weight:800 }
+.homePage .footergrid a:not(.footerLogo),.homePage .footergrid button { margin:12px 0; color:#c7d8d2; font-size:13px; line-height:1.7 }
+.homePage .footergrid a:hover,.homePage .footergrid button:hover { color:#fff; text-decoration:underline; text-underline-offset:4px }
+.homePage .credit { margin-top:40px; padding-top:24px; border-top:1px solid #31594e; font-size:12px; line-height:1.7 }
+
+@media(min-width:1101px) {
+  .homePage .topnav .links { gap:24px }
+  .homePage .topnav .navPrimary { gap:20px }
+  .homePage .topnav .navPrimary a.navAction:not(.btn) { width:auto; min-width:0; min-height:48px; padding:8px 0; flex-direction:row; gap:8px; font-size:13px }
+  .homePage .topnav .navPrimary .navAction > svg { width:19px; height:19px }
+  .homePage .topnav .navPrimary .navAction > span:not(.countBadge) { position:static; width:auto; max-width:none; padding:0; border-radius:0; background:none; box-shadow:none; opacity:1; visibility:visible; transform:none; transition:none; font-size:13px; line-height:1.4 }
+}
+@media(max-width:1100px) {
+  .homePage .footergrid.expanded { grid-template-columns:repeat(4,minmax(0,1fr)) }
+  .homePage .footergrid > div:first-child { grid-column:1/-1 }
+  .homePage .footergrid p { max-width:420px }
+  .homePage .supportProfiles { grid-template-columns:1fr }
+  .homePage .supportProfile { grid-template-columns:120px minmax(0,1fr) }
+}
+@media(max-width:900px) {
+  .homePage .hero { background-position:80% center }
+  .homePage #experiences .grid4 { grid-template-columns:repeat(2,minmax(0,1fr)) }
+}
+@media(max-width:760px) {
+  .homePage .hero { min-height:0; padding:120px 0 36px }
+  .homePage .hero h1 { font-size:clamp(34px,7vw,48px) }
+  .homePage .heroCopy p { max-width:580px; font-size:15px }
+  .homePage .heroSearchShell .bookingModelPanel { padding:18px; border-radius:16px }
+  .homePage .heroSearchShell .compactHeroSearch { grid-template-columns:minmax(0,1fr); gap:0 }
+  .homePage .heroSearchShell .compactHeroSearch .compactSearchButton { min-height:54px; margin-top:14px }
+  .homePage .heroSearchShell .monthPicker { position:fixed; top:84px; right:12px; left:12px; width:auto; max-height:calc(100dvh - 100px); overflow:auto }
+  .homePage .hero .homeAssurance { grid-template-columns:1fr; width:100%; margin-top:20px }
+  .homePage .assuranceItem { justify-content:center; width:100%; min-height:40px; padding:8px 0; border:0 }
+  .homePage .entryGrid { gap:16px }
+  .homePage .entryGrid > a { padding:24px }
+  .homePage .sectionHead { align-items:flex-start; flex-wrap:wrap; gap:20px }
+  .homePage .reviewTrack { grid-auto-columns:88% }
+}
+@media(max-width:650px) {
+  .homePage .section,.homePage #experiences.section { padding:56px 0 }
+  .homePage .section h2 { font-size:29px }
+  .homePage .sub { font-size:15px }
+  .homePage .hero {
+    padding-top:110px;
+    background-image:linear-gradient(180deg,rgba(2,18,22,.58) 0%,rgba(2,18,22,.34) 30%,rgba(2,18,22,.72) 100%),url('images/azalea-hero.jpg');
+  }
+  .homePage .hero h1 { font-size:clamp(32px,8.5vw,44px) }
+  .homePage .heroSearchShell { margin-top:26px }
+  .homePage .heroSearchShell .bookingModelPanel { padding:14px }
+  .homePage .heroSearchShell .compactModeSwitch .bookingModelTab { padding:10px 6px; gap:6px; font-size:12px }
+  .homePage .compactModeSwitch svg { width:19px; height:19px; flex:none }
+  .homePage .heroSearchShell .modeDescription { margin:12px 0 18px; font-size:13px }
+  .homePage .heroSearchShell .monthTrigger { font-size:14px }
+  .homePage .entryGrid { grid-template-columns:minmax(0,1fr); margin-top:24px }
+  .homePage .entryGrid > a { min-height:0 }
+  .homePage .entryGrid h3 { margin-top:18px; font-size:23px }
+  .homePage #experiences .grid4 { gap:16px; grid-template-columns:minmax(0,1fr) }
+  .homePage .experienceCard { height:320px }
+  .homePage .supportProfile { grid-template-columns:90px minmax(0,1fr) }
+  .homePage .supportProfile > div { padding:20px 16px }
+  .homePage .reviewCard { padding:24px }
+  .homePage .reviewCard blockquote { font-size:18px }
+  .homePage .confidenceStats { grid-template-columns:repeat(2,minmax(0,1fr)) }
+  .homePage .confidenceStats > div { padding:24px 18px }
+  .homePage .confidenceStats strong { font-size:30px }
+  .homePage > footer { padding-top:48px }
+  .homePage .footergrid.expanded { grid-template-columns:repeat(2,minmax(0,1fr)); gap:28px 20px }
+}

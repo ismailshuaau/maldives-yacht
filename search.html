@@ -1,5 +1,5 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Search yachts — MaldivesLiveaboardBooking</title><link rel="stylesheet" href="assets/app.css"></head>
-<body class="cataloguePage"><header class="top"><div class="wrap topnav"><a class="brand" href="index.html">MaldivesLiveaboardBooking<small>Maldives by yacht</small></a><nav><a href="index.html#search">New search</a><a href="index.html#experiences">Experiences</a><a class="btn ghost navCta" href="vendor.html">List your yacht</a></nav></div></header>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Search yachts — Maldives Liveaboard Booking</title><link rel="stylesheet" href="assets/app.css"><link rel="icon" type="image/png" sizes="32x32" href="logo/favicon-32.png"><link rel="icon" type="image/png" sizes="192x192" href="logo/favicon-192.png"><link rel="apple-touch-icon" sizes="180x180" href="logo/apple-touch-icon.png"></head>
+<body class="customer-theme cataloguePage"><header class="top"><div class="wrap topnav"><a class="brand brandLogo" href="index.html" aria-label="Maldives Liveaboard Booking home"><img src="logo/logo-dark.png" alt="Maldives Liveaboard Booking" width="2171" height="724" decoding="async"></a><nav aria-label="Catalogue navigation"><a href="index.html#search">New search</a><a href="index.html#experiences">Experiences</a><a class="btn ghost navCta" href="vendor.html">List your yacht</a></nav></div></header>
 <main>
   <section class="catalogueSearchBar"><div class="wrap"><form id="coreSearch" class="catalogueCore">
     <div class="control"><label for="mode">Booking mode</label><select id="mode" name="mode" data-native-select><option value="shared">Liveaboard</option><option value="private">Private charter</option></select></div>
@@ -16,7 +16,17 @@
       <fieldset><legend id="priceLegend">Total price per person</legend><div id="priceOptions" class="filterOptions"></div></fieldset>
       <fieldset id="durationGroup"><legend>Trip duration</legend><div class="filterOptions"><label><input type="radio" name="duration" value="">Any duration</label><label><input type="radio" name="duration" value="1-3">1–3 nights</label><label><input type="radio" name="duration" value="4-7">4–7 nights</label><label><input type="radio" name="duration" value="8-10">8–10 nights</label><label><input type="radio" name="duration" value="11+">11+ nights</label></div></fieldset>
       <fieldset id="typeGroup" hidden><legend>Yacht type</legend><select id="type" data-native-select><option value="">Any yacht type</option></select></fieldset>
-      <fieldset><legend>Experience</legend><select id="experience" data-native-select><option value="">Any experience</option><option>Luxury escape</option><option>Diving</option><option>Surfing</option><option>Fishing</option><option>Honeymoon</option><option>Family holiday</option><option>Wellness &amp; spa</option><option>Adventure</option></select></fieldset>
+      <fieldset><legend>Experience</legend><div class="experienceChoices">
+        <label><input type="radio" name="experience" value="" checked><span><span class="experienceCheck" aria-hidden="true">✓</span>Any experience</span></label>
+        <label><input type="radio" name="experience" value="Luxury escape"><span><span class="experienceCheck" aria-hidden="true">✓</span>Luxury escape</span></label>
+        <label><input type="radio" name="experience" value="Diving"><span><span class="experienceCheck" aria-hidden="true">✓</span>Diving</span></label>
+        <label><input type="radio" name="experience" value="Surfing"><span><span class="experienceCheck" aria-hidden="true">✓</span>Surfing</span></label>
+        <label><input type="radio" name="experience" value="Fishing"><span><span class="experienceCheck" aria-hidden="true">✓</span>Fishing</span></label>
+        <label><input type="radio" name="experience" value="Honeymoon"><span><span class="experienceCheck" aria-hidden="true">✓</span>Honeymoon</span></label>
+        <label><input type="radio" name="experience" value="Family holiday"><span><span class="experienceCheck" aria-hidden="true">✓</span>Family holiday</span></label>
+        <label><input type="radio" name="experience" value="Wellness &amp; spa"><span><span class="experienceCheck" aria-hidden="true">✓</span>Wellness &amp; spa</span></label>
+        <label><input type="radio" name="experience" value="Adventure"><span><span class="experienceCheck" aria-hidden="true">✓</span>Adventure</span></label>
+      </div></fieldset>
       <fieldset><legend>Amenities</legend><div id="amenityOptions" class="filterOptions"></div></fieldset>
       <button id="filterDone" class="btn sea drawerDone" type="button">Done</button>
     </aside>

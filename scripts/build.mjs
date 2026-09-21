@@ -8,3 +8,4 @@ rmSync(output, { recursive: true, force: true });
 mkdirSync(join(output, 'assets'), { recursive: true });
 for (const page of pages) cpSync(page, join(output, page));
 cpSync('assets', join(output, 'assets'), { recursive: true });
+cpSync('logo', join(output, 'logo'), { recursive: true });

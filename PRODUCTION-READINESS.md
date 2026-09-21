@@ -1,4 +1,4 @@
-# MaldivesLiveaboardBooking Production Readiness
+# Maldives Liveaboard Booking Production Readiness
 
 ## Current code status
 

@@ -586,7 +586,7 @@ footer {
   .panel { overflow-x:auto }
 }
 
-/* Yacht detail — reference-inspired hierarchy with MaldivesLiveaboardBooking styling */
+/* Yacht detail — reference-inspired hierarchy with Maldives Liveaboard Booking styling */
 .yachtPage { padding-bottom:0 }
 .yachtHero { padding-top:34px }
 .yachtHeroHead { display:flex; align-items:flex-end; justify-content:space-between; gap:30px }
@@ -782,6 +782,14 @@ footer {
 .catalogueFilters fieldset { min-width:0; margin:0; padding:19px 0; border:0; border-bottom:1px solid var(--line) }
 .catalogueFilters legend { margin-bottom:12px; color:var(--ink); font-size:11px; font-weight:850; letter-spacing:.06em; text-transform:uppercase }
 .catalogueFilters select { width:100%; min-height:42px; padding:8px; border:1px solid var(--line-strong); background:#fff }
+.catalogueFilters .experienceChoices { display:flex; flex-wrap:wrap; gap:8px }
+.catalogueFilters .experienceChoices label { position:relative; max-width:100%; cursor:pointer }
+.catalogueFilters .experienceChoices input { position:absolute; width:1px; height:1px; margin:-1px; padding:0; overflow:hidden; clip-path:inset(50%); white-space:nowrap; border:0 }
+.catalogueFilters .experienceChoices label > span { display:flex; align-items:center; gap:6px; min-height:44px; padding:9px 12px; border:1px solid #b7cec3; border-radius:999px; background:#fff; color:#38534a; font:600 13px/1.4 var(--font-body) }
+.catalogueFilters .experienceChoices .experienceCheck { display:none }
+.catalogueFilters .experienceChoices input:checked + span { border-color:#7f9d91; background:#e8f2e7; color:#062f28 }
+.catalogueFilters .experienceChoices input:checked + span .experienceCheck { display:inline }
+.catalogueFilters .experienceChoices input:focus-visible + span { outline:3px solid var(--focus,var(--sea)); outline-offset:3px }
 .filterOptions { display:grid; gap:10px }
 .filterOptions label { display:flex; align-items:flex-start; gap:9px; color:#385158; cursor:pointer; font-size:12px; line-height:1.4 }
 .filterOptions input { width:16px; height:16px; margin:0; flex:none; accent-color:var(--sea) }
@@ -1180,21 +1188,6 @@ footer {
   .privateDatePanel p { grid-column:auto }
 }
 
-/* Desktop navigation labels become accessible hover/focus tooltips. */
-@media(min-width:1101px) {
-  .topnav .navAction { position:relative; width:44px; min-width:44px }
-  .topnav .navAction > span:not(.countBadge) {
-    position:absolute; top:calc(100% + 7px); left:50%; z-index:60; width:max-content; max-width:190px;
-    padding:7px 9px; border-radius:3px; background:var(--ink); color:#fff; box-shadow:0 7px 18px rgba(3,20,24,.2);
-    font-size:11px; font-weight:750; line-height:1.2; pointer-events:none; opacity:0; transform:translate(-50%,-3px);
-    transition:opacity .14s,transform .14s;
-  }
-  .topnav .navAction:hover > span:not(.countBadge),
-  .topnav .navAction:focus > span:not(.countBadge),
-  .topnav .navAction:focus-visible > span:not(.countBadge) { opacity:1; transform:translate(-50%,0) }
-  .topnav .wishlistLink .countBadge { left:calc(50% + 3px) }
-}
-
 /* Detached trip switch, visible mode description, and compact date/search row. */
 .heroSearchShell .bookingModelPanel { display:flex; align-items:center; flex-direction:column }
 .heroSearchShell .tripTypeField {
@@ -1229,4 +1222,412 @@ footer {
   .heroSearchShell .compactModeSwitch .bookingModelTab { justify-content:center; padding:7px 10px }
   .heroSearchShell .compactHeroSearch { width:100%; grid-template-columns:1fr }
   .heroSearchShell .compactHeroSearch .travelPeriodField { border-radius:5px 5px 0 0 }
+}
+
+/* Customer brand theme. Portal pages intentionally remain on the base tokens. */
+.customer-theme {
+  --ink:#032c26;
+  --ink2:#0b463b;
+  --muted:#586d66;
+  --sea:#075a4b;
+  --sea-hover:#032c26;
+  --brand-orange:#fb9f33;
+  --brand-orange-hover:#e7871f;
+  --aqua:#e7f2ed;
+  --cream:#faf8f2;
+  --sand:#f3ecdf;
+  --line:#d9e2dc;
+  --line-strong:#a8bdb4;
+  --gold:#fb9f33;
+  --focus:#fb9f33;
+}
+.customer-theme h1,
+.customer-theme h2,
+.customer-theme h3 { color:var(--ink) }
+.customer-theme .hero h1,
+.customer-theme .confidenceSection h2,
+.customer-theme .confidenceSection h3 { color:#fff }
+.customer-theme select {
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8' fill='none'%3E%3Cpath d='m1 1.25 5 5 5-5' stroke='%23fb9f33' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+}
+.customer-theme .customSelectTrigger:hover,
+.customer-theme .control input:hover,
+.customer-theme .control select:hover,
+.customer-theme .control textarea:hover,
+.customer-theme .input:hover { border-color:#5e8176 }
+.customer-theme .customSelectTrigger:focus-visible,
+.customer-theme .customSelectSearch:focus,
+.customer-theme .control input:focus,
+.customer-theme .control select:focus,
+.customer-theme .control textarea:focus,
+.customer-theme .input:focus { outline-color:rgba(251,159,51,.38) }
+
+/* Orange is the primary action and active-state color. */
+.customer-theme .btn.sea,
+.customer-theme .btn.gold { border-color:var(--brand-orange); background:var(--brand-orange); color:var(--ink) }
+.customer-theme .btn.sea:hover,
+.customer-theme .btn.gold:hover { border-color:var(--brand-orange-hover); background:var(--brand-orange-hover); color:var(--ink) }
+.customer-theme .btn.ghost { border-color:var(--ink); background:var(--ink); color:#fff }
+.customer-theme .btn.ghost:hover { border-color:var(--ink2); background:var(--ink2); color:#fff }
+.customer-theme .summaryRating,
+.customer-theme .ratingScore,
+.customer-theme .bookingSteps .active span { border-color:var(--brand-orange); background:var(--brand-orange); color:var(--ink) }
+.customer-theme .bookingModelTab.active,
+.customer-theme .modeToggle button.active,
+.customer-theme .monthChoice:hover,
+.customer-theme .monthChoice.active,
+.customer-theme .shortcutButtons button[aria-pressed="true"],
+.customer-theme .monthGrid button[aria-pressed="true"],
+.customer-theme .heroSearchShell .compactModeSwitch .bookingModelTab.active {
+  border-color:var(--brand-orange);
+  background:var(--brand-orange);
+  color:var(--ink);
+}
+.customer-theme .btn:disabled,
+.customer-theme .btn[aria-disabled="true"] { border-color:#cbd3cf; background:#e0e5e2; color:#718079 }
+
+/* Navigation and footer use the logo's deep green; icons stay white in all states. */
+.customer-theme .topnav {
+  border-bottom-color:#174b45;
+  background:#032c26;
+  color:#fff;
+  box-shadow:none;
+  isolation:isolate;
+}
+.customer-theme .topnav::after {
+  content:"";
+  position:absolute;
+  top:100%;
+  right:0;
+  left:0;
+  z-index:0;
+  height:22px;
+  background:linear-gradient(to bottom,rgba(3,44,38,.28),rgba(3,44,38,.1) 45%,rgba(3,44,38,0));
+  pointer-events:none;
+}
+.customer-theme .topnav > .wrap { z-index:1 }
+.customer-theme header.top { background:#032c26 }
+.customer-theme header.top nav { display:flex; align-items:center; gap:24px; color:#fff }
+.customer-theme header.top nav a:not(.btn) { padding:8px 0; border-bottom:2px solid transparent; color:#fff }
+.customer-theme header.top nav a:not(.btn):hover,
+.customer-theme header.top nav a:not(.btn):focus-visible { border-bottom-color:var(--brand-orange); color:#fff }
+.customer-theme .topnav .brand,
+.customer-theme .topnav .brand small { color:#fff }
+.customer-theme .topnav .brandLogo {
+  display:block;
+  width:217px;
+  height:72px;
+  overflow:hidden;
+  flex:none;
+}
+.customer-theme .topnav .brandLogo img { width:100%; height:100%; object-fit:contain }
+.customer-theme .topnav .links a:not(.btn),
+.customer-theme .topnav .links button,
+.customer-theme .topnav .navLocale { color:#fff }
+.customer-theme .topnav .links a:not(.btn):hover,
+.customer-theme .topnav .links button:hover,
+.customer-theme .topnav .links .navAction:hover,
+.customer-theme .topnav .links a:not(.btn):focus-visible,
+.customer-theme .topnav .links button:focus-visible { border-color:var(--brand-orange); color:#fff }
+.customer-theme .topnav .navAction > svg,
+.customer-theme .topnav .mobileNavToggle svg { color:#fff; stroke:#fff }
+.customer-theme .topnav .countBadge { background:var(--brand-orange); color:var(--ink) }
+.customer-theme .topnav .mobileNavToggle { color:#fff }
+.customer-theme .topnav .btn.ghost,
+.customer-theme .topnav .btn.sea { border-color:var(--brand-orange); background:var(--brand-orange); color:var(--ink) }
+.customer-theme footer { border-top-color:#174b45; background:#032c26; color:#c7d8d2 }
+.customer-theme footer h4 { color:#fff }
+.customer-theme footer a:hover,
+.customer-theme footer button:hover { color:var(--sea) }
+.customer-theme .credit { color:#9db8ae }
+
+/* Pale green and warm-neutral surfaces replace the old teal-tinted UI chrome. */
+.customer-theme .utilityHeader,
+.customer-theme .confidenceSection { background:#062f28 }
+.customer-theme .homeAssurance,
+.customer-theme .supportSection,
+.customer-theme .privateAvailability { background:var(--aqua) }
+.customer-theme .hero .homeAssurance { color:var(--sea) }
+.customer-theme #experiences { background:#f1f5ef !important }
+.customer-theme.cataloguePage { background:var(--cream) }
+.customer-theme .activeChips button { border-color:#b7cec3; color:var(--ink) }
+.customer-theme .filterOptions label,
+.customer-theme .yachtLead,
+.customer-theme .privateAvailability p { color:#38534a }
+.customer-theme .nauticalLoader { border-bottom-color:var(--sea) }
+.customer-theme .skeletonResult .skeletonImage,
+.customer-theme .skeletonLine {
+  background:linear-gradient(100deg,#e4ebe6 20%,#f8f6ef 40%,#e4ebe6 60%);
+  background-size:220% 100%;
+}
+.customer-theme .promoBadge { background:#e2f0e8; color:#176347 }
+.customer-theme .verified,
+.customer-theme .successReference strong { color:#176347 }
+.customer-theme .successMark { background:#176347; color:#fff }
+.customer-theme .lowStock,
+.customer-theme .danger { color:var(--danger) }
+
+@media(max-width:1100px) {
+  .customer-theme .topnav .links { background:#032c26 }
+}
+@media(max-width:650px) {
+  .customer-theme .topnav .brandLogo { width:180px; height:60px }
+}
+
+/* 2026 customer UI refinement. Keep these tokens and primitives customer-scoped. */
+.customer-theme {
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:24px;
+  --space-6:32px;
+  --space-7:48px;
+  --space-8:72px;
+  --radius-sm:6px;
+  --radius-md:10px;
+  --radius-lg:16px;
+  --shadow-sm:0 2px 10px rgba(3,44,38,.07);
+  --shadow-md:0 14px 38px rgba(3,44,38,.12);
+  --shadow-lg:0 28px 70px rgba(3,44,38,.2);
+  --control-height:44px;
+  --transition-fast:160ms ease;
+  font-size:16px;
+  line-height:1.6;
+}
+.customer-theme h1 { font-size:clamp(2.5rem,5vw,4.25rem); line-height:1.02; letter-spacing:-.025em }
+.customer-theme h2 { font-size:clamp(2rem,3.5vw,3rem); line-height:1.08; letter-spacing:-.018em }
+.customer-theme h3 { line-height:1.15 }
+.customer-theme .eyebrow,
+.customer-theme small,
+.customer-theme .field label,
+.customer-theme .control label,
+.customer-theme .fieldLabel,
+.customer-theme .shortcutGroup > span,
+.customer-theme .departureTableHead,
+.customer-theme .departureRow small,
+.customer-theme .heroRating span,
+.customer-theme .heroFacts span,
+.customer-theme .highlightGrid small,
+.customer-theme .experienceGrid small,
+.customer-theme .tripCard small,
+.customer-theme .selectedTrip small,
+.customer-theme .selectedTrip span,
+.customer-theme .bookingMessage,
+.customer-theme .bookingAssurance,
+.customer-theme .fieldHelp,
+.customer-theme .wizardStep .control small,
+.customer-theme .summaryFacts span,
+.customer-theme .reviewDetails span,
+.customer-theme .summaryPriceRows p,
+.customer-theme .privateRules,
+.customer-theme .itineraryMeta span,
+.customer-theme .itineraryDisclaimer,
+.customer-theme .cabinCategoryMeta,
+.customer-theme .cabinCategoryDescription,
+.customer-theme .cabinCategoryControls label,
+.customer-theme .catalogueFilters legend,
+.customer-theme .privateCatalogueAction small,
+.customer-theme .privateCatalogueAction span,
+.customer-theme .supportProfile span,
+.customer-theme .confidenceStats span,
+.customer-theme .reviewCard footer span,
+.customer-theme .trustMarks span,
+.customer-theme .marketplaceDialogBody label,
+.customer-theme .statusPill { font-size:12px }
+
+/* Shared interactive primitives. */
+.customer-theme .btn,
+.customer-theme .customSelectTrigger,
+.customer-theme .customSelectOption,
+.customer-theme .monthChoice,
+.customer-theme .modeToggle button,
+.customer-theme .bookingModelTab,
+.customer-theme .itineraryButton,
+.customer-theme .utilityButton,
+.customer-theme .textButton,
+.customer-theme .filterHeading button,
+.customer-theme .activeChips button,
+.customer-theme .authTabs button,
+.customer-theme .carouselControls button { min-height:var(--control-height) }
+.customer-theme .btn,
+.customer-theme .customSelectTrigger,
+.customer-theme .monthChoice,
+.customer-theme .modeToggle,
+.customer-theme .modeToggle button,
+.customer-theme .bookingModelSwitch,
+.customer-theme .bookingModelTab,
+.customer-theme .activeChips button,
+.customer-theme .carouselControls button { border-radius:var(--radius-sm) }
+.customer-theme .control input,
+.customer-theme .control select,
+.customer-theme .control textarea,
+.customer-theme .input,
+.customer-theme .marketplaceDialogBody input,
+.customer-theme .marketplaceDialogBody select,
+.customer-theme .marketplaceDialogBody textarea,
+.customer-theme .referenceCabinBuy select,
+.customer-theme .catalogueFilters select {
+  min-height:var(--control-height);
+  border-radius:var(--radius-sm);
+}
+.customer-theme :is(a,button,input,select,textarea,[tabindex]):focus-visible {
+  outline:3px solid var(--focus);
+  outline-offset:3px;
+}
+.customer-theme .btn,
+.customer-theme button { transition:background-color var(--transition-fast),border-color var(--transition-fast),color var(--transition-fast),box-shadow var(--transition-fast),transform var(--transition-fast) }
+.customer-theme .btn:not(:disabled):active { transform:translateY(1px) }
+
+/* Cards, summaries, filters, dialogs, pills, and loading states. */
+.customer-theme .card,
+.customer-theme .catalogueCard,
+.customer-theme .sharedResult,
+.customer-theme .privateCatalogueCard,
+.customer-theme .panel,
+.customer-theme .wizardCard,
+.customer-theme .tripSummary,
+.customer-theme .referenceCabin,
+.customer-theme .reviewCard,
+.customer-theme .supportProfile,
+.customer-theme .accountRow,
+.customer-theme .bookingBox,
+.customer-theme .bookLater {
+  border-radius:var(--radius-md);
+  box-shadow:var(--shadow-sm);
+  overflow:hidden;
+}
+.customer-theme .card:hover,
+.customer-theme .catalogueCard:hover { border-color:#7f9d91; box-shadow:var(--shadow-md); transform:translateY(-2px) }
+.customer-theme .catalogueFilters { border-top-color:var(--brand-orange); border-radius:var(--radius-md); box-shadow:var(--shadow-sm) }
+.customer-theme .itineraryModalCard,
+.customer-theme .marketplaceDialogCard,
+.customer-theme .galleryLightboxCard { border-radius:var(--radius-lg); box-shadow:var(--shadow-lg) }
+.customer-theme .tag,
+.customer-theme .statusPill,
+.customer-theme .promoBadge,
+.customer-theme .lowStock { border-radius:999px }
+.customer-theme .nauticalLoader,
+.customer-theme .btn .buttonSpinner { border-top-color:var(--brand-orange) }
+.customer-theme .bookingSteps { overflow:hidden; border-radius:var(--radius-md); box-shadow:var(--shadow-sm) }
+.customer-theme .bookingSteps .active { box-shadow:inset 0 -3px var(--brand-orange) }
+
+/* Desktop navigation labels become hover/focus tooltips; mobile labels stay inline. */
+@media(min-width:1101px) {
+  .customer-theme .topnav .links { gap:14px }
+  .customer-theme .navPrimary { gap:12px }
+  .customer-theme .navUtilities { gap:8px }
+  .customer-theme .topnav .navAction,
+  .customer-theme .topnav .links a.navAction:not(.btn),
+  .customer-theme .topnav .links button.navAction,
+  .customer-theme .topnav .navLocale {
+    position:relative;
+    width:48px;
+    min-width:48px;
+    min-height:52px;
+    padding:5px 3px;
+    flex-direction:column;
+    gap:3px;
+    color:#fff;
+    font-size:10px;
+  }
+  .customer-theme .topnav .navAction > span:not(.countBadge) {
+    position:absolute;
+    top:calc(100% + 8px);
+    left:50%;
+    z-index:60;
+    width:max-content;
+    max-width:190px;
+    padding:7px 9px;
+    border-radius:var(--radius-sm);
+    background:var(--ink);
+    color:#fff;
+    box-shadow:var(--shadow-sm);
+    font-size:11px;
+    font-weight:750;
+    line-height:1.2;
+    opacity:0;
+    visibility:hidden;
+    transform:translate(-50%,-3px);
+    transition:opacity var(--transition-fast),transform var(--transition-fast),visibility 0s linear 160ms;
+    pointer-events:none;
+  }
+  .customer-theme .topnav .navAction:hover > span:not(.countBadge),
+  .customer-theme .topnav .navAction:focus > span:not(.countBadge),
+  .customer-theme .topnav .navAction:focus-visible > span:not(.countBadge) {
+    opacity:1;
+    visibility:visible;
+    transform:translate(-50%,0);
+    transition-delay:0s;
+  }
+  .customer-theme .topnav .wishlistLink .countBadge {
+    position:absolute;
+    top:1px;
+    left:calc(50% + 4px);
+    margin:0;
+  }
+}
+
+/* Responsive touch layouts and device safe areas. */
+@media(max-width:1100px) {
+  .customer-theme .topnav .links {
+    padding-bottom:calc(26px + env(safe-area-inset-bottom));
+    box-shadow:var(--shadow-md);
+  }
+  .customer-theme .topnav .links a:not(.btn),
+  .customer-theme .topnav .links button,
+  .customer-theme .topnav .navLocale { min-height:48px }
+}
+@media(max-width:650px) {
+  .customer-theme { font-size:15px }
+  .customer-theme .wrap { padding-right:16px; padding-left:16px }
+  .customer-theme h1 { font-size:clamp(2.25rem,11vw,3.25rem); line-height:1.03 }
+  .customer-theme h2 { font-size:clamp(1.85rem,9vw,2.55rem); line-height:1.08 }
+  .customer-theme .referenceBooking { gap:16px }
+  .customer-theme .referenceBooking .bookingAside { border-radius:var(--radius-md) }
+  .customer-theme .mobileBookingBar {
+    min-height:calc(76px + env(safe-area-inset-bottom));
+    padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+  }
+  .customer-theme.yachtPage { padding-bottom:calc(76px + env(safe-area-inset-bottom)) }
+  .customer-theme .itineraryModalCard,
+  .customer-theme .marketplaceDialogCard,
+  .customer-theme .galleryLightboxCard { border-radius:0 }
+  .customer-theme .catalogueCore,
+  .customer-theme .catalogueFilters { padding-bottom:calc(24px + env(safe-area-inset-bottom)) }
+}
+@media(prefers-reduced-motion:reduce) {
+  .customer-theme *,
+  .customer-theme *::before,
+  .customer-theme *::after { scroll-behavior:auto !important; transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important }
+}
+
+/* The homepage navigation overlays the hero, then adopts the standard solid header. */
+.customer-theme .topnav.homeNav {
+  position:fixed;
+  top:0;
+  right:0;
+  left:0;
+  border-bottom-color:transparent;
+  background:transparent;
+  transition:background-color 180ms ease,border-color 180ms ease,box-shadow 180ms ease;
+}
+.customer-theme .topnav.homeNav::after { opacity:0; transition:opacity 180ms ease }
+.customer-theme .topnav.homeNav.is-scrolled,
+.customer-theme .topnav.homeNav.is-menu-open {
+  border-bottom-color:#174b45;
+  background:#032c26;
+  box-shadow:0 2px 14px rgba(3,44,38,.18);
+}
+.customer-theme .topnav.homeNav.is-scrolled::after,
+.customer-theme .topnav.homeNav.is-menu-open::after { opacity:1 }
+.homePage .hero {
+  min-height:clamp(560px,100svh,680px);
+  padding-top:120px;
+}
+@media(max-width:760px) {
+  .homePage .hero { min-height:0; padding-top:104px }
+}
+@media(max-width:650px) {
+  .homePage .hero { padding-top:98px }
 }

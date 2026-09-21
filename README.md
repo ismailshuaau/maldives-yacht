@@ -1,6 +1,6 @@
-# MaldivesLiveaboardBooking — Maldives Yacht Marketplace MVP
+# Maldives Liveaboard Booking — Maldives Yacht Marketplace MVP
 
-MaldivesLiveaboardBooking is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
+Maldives Liveaboard Booking is a working multi-vendor marketplace prototype for Maldives yacht travel. The customer experience is yacht-first rather than atoll-first: guests search by dates, guest count, private/shared travel and experience, then compare vessels and request a booking.
 
 ## Included
 
@@ -37,6 +37,18 @@ MaldivesLiveaboardBooking is a working multi-vendor marketplace prototype for Ma
 - Seeded demonstration vendor and yacht inventory
 
 ## Run locally
+
+Start the Cloudflare Worker with its local D1 database:
+
+```bash
+npm run dev
+```
+
+Open http://localhost:8787/. This builds the frontend and applies pending migrations
+to local D1 before starting the server. Existing local data is retained. To apply
+local migrations separately, run `npm run db:migrate:local`.
+
+The legacy Python server uses its own SQLite database:
 
 ```bash
 cd maldives-yacht-platform
@@ -103,7 +115,7 @@ This package is a functional product MVP, not a production deployment. A commerc
 
 ## Demo media and listing data
 
-The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original MaldivesLiveaboardBooking vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
+The interface references free-to-use Pexels photography for demonstration. It also includes a dated mock-data snapshot of public Maldives listings and April 2028 departure information from [LiveAboard.com](https://www.liveaboard.com/diving/search/maldives/april/2028). Imported vessel imagery remains hosted by its source. The original Maldives Liveaboard Booking vessel records remain fictional sample content; imported prices and availability are illustrative snapshots and must not be treated as live inventory.
 
 ## BML Connect payment integration
 
